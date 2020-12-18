@@ -1,6 +1,6 @@
 package RandCol;
 
-import java.util.ArrayList;
+import java.util.*;
 
 /**
  * Route Class for a route in vehicle routing problem
@@ -26,7 +26,7 @@ public class Route {
 	 * @param lst a liist of customer nodes
 	 * @return
 	 */
-	public Route(ArrayList<Integer> lst){
+	public Route(List<Integer> lst){
 		route = new ArrayList<Integer>(8);
 		for(int customer : lst){
 			route.add(customer);

@@ -85,6 +85,7 @@ public class DataHandler {
 
 	public DataHandler(Data data, int nThreads, int step) {
 		this.d = data;
+		this.n = data.nNode;
 		this.root = root;
 //		instanceType = type;
 //		instanceNumber=number;
@@ -135,14 +136,11 @@ public class DataHandler {
 
 	public void readSolomon(int numNodes, int q) throws NumberFormatException, IOException {
 
-
 		File file = new File(CvsInput);
 		BufferedReader bufRdr = new BufferedReader(new FileReader(file));
 		String line = bufRdr.readLine(); //READ Num Nodes
 		this.Q = q;
-
-		n = numNodes;
-
+		this.n = numNodes;
 		x = new double[n+1];
 		y = new double[n+1];
 		demand = new int[n+1];
@@ -153,7 +151,6 @@ public class DataHandler {
 		String[] stringReader = new String[7];
 		int indexString = 0;
 		stringReader = line.trim().split("\\s+");
-
 
 
 		x[0] =Double.parseDouble(stringReader[1]);
@@ -408,29 +405,6 @@ public class DataHandler {
 
 	}
 
-//private void readCapacity() throws IOException {
-//		File file = new File("Solomon Instances/capacities.txt");
-//		BufferedReader bufRdr = new BufferedReader(new FileReader(file));
-////		for (int i = 0; i < 6; i++) {
-////			String line = bufRdr.readLine(); //READ Num Nodes
-////			String[] spread = line.split(":");
-////			if(instanceType.equals(spread[0])){
-////				int serie = Integer.parseInt(spread[1]);
-////				if (instanceNumber-serie<50) {
-////					Q=Integer.parseInt(spread[2]);
-////					return;
-////				}else{
-////					Q=200;
-////					return;
-////				}
-////			}
-////		}
-//		Q=4;
-//		return;
-//
-//
-//
-//	}
 
 	public double haversine(int i, int j) {
 		double lat1 = x[i];

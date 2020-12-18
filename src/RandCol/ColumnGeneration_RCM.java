@@ -8,18 +8,11 @@ package RandCol;
 
 import gurobi.*;
 import gurobi.GRB.DoubleAttr;
-import miaoyu.algorithm.RandColW;
-import miaoyu.helper.Data;
-import miaoyu.helper.Route;
 import pulse.DataHandler;
 import pulse.GraphManager;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
 
 public class ColumnGeneration_RCM {
 	public Data data;
@@ -27,9 +20,9 @@ public class ColumnGeneration_RCM {
 	public double lowerbound;
 	public double upperbound;
 	public boolean initialized;
-	public ArrayList<Route> routes;
-	public ArrayList<Route> artificialRoute;
-	public ArrayList<Route> solRoutes;
+	public List<Route> routes;
+	public List<Route> artificialRoute;
+	public List<Route> solRoutes;
 	private int nNode;
 	private int nVehicle;
 	public int nIter;
@@ -40,7 +33,57 @@ public class ColumnGeneration_RCM {
 	public static long count_depth_bound=0;
 	public static long count_inf=0;
 	public static long count_roll=0;
+	public long lptime;
+	public long iptime;
+	public String fileName;
+	public long etime;
+	public int count;
+	public List<Cut> cutPool;
+	public List<Integer>[][] edgeToCut;
+	public List<Integer>[][] edgeToRoute;
 
+	public double getUpperbound(){
+		ArrayList<String[]> rawData = new ArrayList<String[]>();
+		String csvFile = "Data\\UCVRP"+data.capacity+"\\RandCol-multi\\"+data.fileName+"-"+data.nNode+"-ii.csv";
+		BufferedReader br = null;
+		String line = "";
+		String cvsSplitBy = ",";
+		double ub = 0;
+		try{
+			br = new BufferedReader(new FileReader(csvFile));
+			for(int i = 0; i < 6; i++)
+				line = br.readLine();
+			ub = Double.parseDouble(line);
+			return ub+0.5;
+		}catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (br != null) {
+				try {
+					br.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		return 0;
+	}
+
+
+	public void convertRoute2Edge(Route r, int idx){
+		int prev = 0;
+		for(int cur : r.route){
+			if(prev < cur){
+				edgeToRoute[prev][cur].add(idx);
+			}else{
+				edgeToRoute[cur][prev].add(idx);
+			}
+			prev = cur;
+		}
+		if(prev != 0) edgeToRoute[0][prev].add(idx);
+	}
 	public ColumnGeneration_RCM(Data d){
 		this.data = d;
 		this.nNode = d.nNode;
@@ -51,18 +94,22 @@ public class ColumnGeneration_RCM {
 		this.nIter = 0;
 		this.nColumns = 0;
 		this.timer = System.currentTimeMillis();
+		this.cutPool = new ArrayList<>();
+		this.edgeToRoute = new List[nNode][nNode];
+		this.edgeToCut = new List[nNode][nNode];
+		for(int i = 0; i < nNode; i++)
+			for(int j = i+1; j < nNode; j++){
+				edgeToRoute[i][j] = new ArrayList<>();
+				edgeToCut[i][j] = new ArrayList<>();
+			}
 	}
 
-	/**
-	 * Depreciated
-	 *
-	 * @return
-	 */
+
 	public double solve()throws GRBException, InterruptedException, NumberFormatException, IOException {
 		int i, j, k;
 		try {
 
-			String logName = "log\\RC\\"+data.fileName;
+			String logName = "log\\RC_"+data.fileName;
 			File f = new File(logName);
 			f.delete();
 			GRBEnv   env   = new GRBEnv(logName);
@@ -83,20 +130,23 @@ public class ColumnGeneration_RCM {
 
 			if (tot_size < 1) { //execute only the first time
 				System.out.println("Initialize!");
-					for(i = 1; i < nNode; i++){
-						ArrayList<Integer> temp = new ArrayList<Integer>(1);
-						temp.add(i);
-						Route tempRoute = new Route(temp);
-						tempRoute.updateCost(data.distance);
-						routes.add(tempRoute);
-					}
+				for(i = 1; i < nNode; i++){
+					ArrayList<Integer> temp = new ArrayList<Integer>(1);
+					temp.add(i);
+					Route tempRoute = new Route(temp);
+					tempRoute.updateCost(data.distance);
+					routes.add(tempRoute);
+				}
 			}
 
 			System.out.println("original routes: "+routes.size());
 
 			routes = savings(routes);
+			int id = 0;
 			for(Route r : routes){
 				r.updateCost(data.distance);
+				convertRoute2Edge(r, id);
+				id++;
 			}
 			System.out.println("initial routes: "+routes.size());
 
@@ -109,11 +159,10 @@ public class ColumnGeneration_RCM {
 			// Add constraints : (2.7)
 			GRBLinExpr expr = new GRBLinExpr();
 
-				expr = new GRBLinExpr();
-				for(int p = 0; p < routes.size();p++){
-					expr.addTerm(routes.get(p).cost, lambda.getElement(p));
-					//System.out.println("v"+k+": "+routes[k].get(p).getCost());
-				}
+			expr = new GRBLinExpr();
+			for(int p = 0; p < routes.size();p++){
+				expr.addTerm(routes.get(p).cost, lambda.getElement(p));
+			}
 			master.setObjective(expr, GRB.MINIMIZE);
 
 
@@ -126,12 +175,15 @@ public class ColumnGeneration_RCM {
 			GRBConstr[] cons_visit = new GRBConstr[nNode];
 			for(j = 1; j < nNode; j++){
 				expr = new GRBLinExpr();
-						for(int p = 0; p < routes.size();p++){
-							if(routes.get(p).contains(j))
-								expr.addTerm(1, lambda.getElement(p));
-						}
+				for(int p = 0; p < routes.size();p++){
+					if(routes.get(p).contains(j))
+						expr.addTerm(1, lambda.getElement(p));
+				}
 				cons_visit[j] = master.addConstr(expr, GRB.GREATER_EQUAL, 1, "c1"+j);
 			}
+
+			// initialize cut contraints list
+			List<GRBConstr> cut_enforce = new ArrayList<>();
 
 
 
@@ -139,6 +191,7 @@ public class ColumnGeneration_RCM {
 			boolean oncemore = true;
 			double objval = Double.MAX_VALUE;
 			timer = System.currentTimeMillis();
+			lptime = System.currentTimeMillis();
 			while(oncemore){
 				oncemore = false;
 				nIter++;
@@ -157,186 +210,321 @@ public class ColumnGeneration_RCM {
 					lowerbound = objval;
 					return objval;
 				}
+				// primal solution
+				double[] xroute = new double[lambda.getSize()];
+				for(i = 0; i < lambda.getSize(); i++){
+					xroute[i] = lambda.getElement(i).get(DoubleAttr.X);
+				}
+
+
+				// dual solution for visited node
 				double[] alpha = new double[nNode];
 				//double[] gamma = new double[K];
 				for(i = 1; i < nNode; i++){
 					alpha[i] = cons_visit[i].get(DoubleAttr.Pi);
 				}
+				// dual solution for cuts
+				double[] beta = new double[cut_enforce.size()];
+				for(i = 1; i < cut_enforce.size(); i++){
+					beta[i] = cut_enforce.get(i).get(DoubleAttr.Pi);
+				}
 
 				System.out.println("print dual solutions");
-				System.out.println("alpha");
-				System.out.println(Arrays.toString(alpha));
+				System.out.println("beta");
+				System.out.println(Arrays.toString(beta));
 
-				//				if(oncemore == false)
-				//					break;
+
 				// update cost for each pricing problem
-					System.out.println("Solving pricing problem");
-					for (i = 1; i < nNode; i++){
-						if(data.distance[0][i] > 1000 ){
-							data.cost[0][i] = data.distance[0][i];
+				System.out.println("Solving pricing problem");
+				for (i = 1; i < nNode; i++){
+					if(data.distance[0][i] > 1000 ){
+						data.cost[0][i] = data.distance[0][i];
+					}else{
+						data.cost[0][i] = data.distance[0][i] - alpha[i]/2;
+					}
+				}
+				for (j = 0; j < nNode; j++){
+					if(data.distance[j][nNode] > 1000 ){
+						data.cost[j][nNode] = data.distance[j][0];
+					}else{
+						data.cost[j][nNode] = data.distance[j][0]- alpha[j]/2;
+					}
+					//data.cost[u][0] = data.vDistanceMatrix.get(k)[u][0];
+					for (i = 0; i < nNode; i++){
+						if(data.distance[j][i] > 1000 ){
+							data.cost[j][i] = data.distance[j][i];
 						}else{
-							data.cost[0][i] = data.distance[0][i] - alpha[i];
+							data.cost[j][i] = data.distance[j][i] - alpha[i]/2- alpha[j]/2;
 						}
 					}
-					for (j = 0; j < nNode; j++){
-						if(data.distance[j][nNode] > 1000 ){
-							data.cost[j][nNode] = data.distance[j][0];
+				}
+
+				// update reduced cost of cuts
+				for(int l = 0; l < cut_enforce.size(); l++) {
+					Cut c = cutPool.get(l);
+					for(int[] e : c.getEdges()){
+						int from = e[0];
+						int to = e[1];
+						data.cost[from][to] -= beta[l];
+						data.cost[to][from] -= beta[l];
+						if(from == 0) data.cost[to][nNode] -= beta[l];
+						if(to == 0) data.cost[from][nNode] -= beta[l];
+					}
+				}
+
+				// generate cuts
+				List<Route> sol_routes = new ArrayList<>();
+				for(i = 0; i < lambda.getSize(); i++){
+					if(xroute[i] > 0){
+						sol_routes.add(routes.get(i));
+						routes.get(i).sol = xroute[i];
+					}
+				}
+				Seperator spt = new Seperator(nNode, sol_routes, data.capacity);
+				spt.generate();
+				if(spt.getCutPool().size() != 0) oncemore = true;
+				for(Cut c : spt.getCutPool()){
+//					System.out.println(Arrays.toString(c.getSet()));
+//					for(int[] edge : c.getEdges()){
+//						System.out.println(Arrays.toString(edge));
+//					}
+//					System.out.println(c.getRhs());
+					this.cutPool.add(c);
+					expr = new GRBLinExpr();
+					for(int[] edge: c.getEdges()){
+						if(edge[0] < edge[1]){
+							for(Integer idx : edgeToRoute[edge[0]][edge[1]]){
+								expr.addTerm(1, lambda.getElement(idx));
+							}
 						}else{
-							data.cost[j][nNode] = data.distance[j][0];
-						}
-						//data.cost[u][0] = data.vDistanceMatrix.get(k)[u][0];
-						for (i = 0; i < nNode; i++){
-							if(data.distance[j][i] > 1000 ){
-								data.cost[j][i] = data.distance[j][i];
-							}else{
-								data.cost[j][i] = data.distance[j][i] - alpha[i];
+							for(Integer idx : edgeToRoute[edge[1]][edge[0]]){
+								expr.addTerm(1, lambda.getElement(idx));
 							}
 						}
 					}
-					//					System.out.println("printing the updated cost matrix for vehicle "+k);
-					//					for(i = 0; i < nVehicle; i++){
-					//						System.out.println(Arrays.toString(data.cost[i]));
-					//					}
-
-					Set<Route>newroute = new HashSet<Route>();
-					data.setThread(39);
-					//RCm_MT pprc = new RCm_MT(data);
-					//RC_MultiThread pprc = new RC_MultiThread(data);
-					miaoyu.algorithm.RandColW pprc = new RandColW(data);
-
-					if(pprc.solve()) {
-						oncemore = true;
-						newroute = pprc.solutionSet;
-						System.out.println("number of new route found:" + newroute.size());
-						for (Route r : newroute) {
-							GRBColumn col = new GRBColumn();
-							for (int v : r.route) {
-								System.out.print(v + ",");
-								col.addTerm(1, cons_visit[v]);
-							}
-							r.updateCost(data.distance);
-							GRBVar newvar = master.addVar(0, 1, r.cost, GRB.CONTINUOUS, col, "lambda");
-							lambda.add(newvar);
-							routes.add(r);
-							nColumns++;
-						}
-						timerBeforeLast = System.currentTimeMillis() - timer;
-					//}
-
-					}
-					else
-				{
-					oncemore = false;
-				String dataFile = null;
-				String dir = "Solomon Instances/";
-				int here;
-				if(data.fileName.substring(data.fileName.length()-5).startsWith("\\")||data.fileName.substring(data.fileName.length()-5).startsWith("/")){
-					here = 4;
-				}else{
-					here = 5;
-				}
-				String fo = data.fileName.substring(data.fileName.length()-here);
-				System.out.println(fo);
-				String instanceType = fo.substring(0,here-3);
-				int instanceNumber = Integer.parseInt(fo.substring(here-3,here));
-				String extension = ".txt";
-				dataFile = dir + instanceType + instanceNumber + extension;
-				System.out.println("Instance: "+dataFile);
-				//System.out.println("done load");
-
-				// Read data file and define the following parameters: number of threads, number of nodes, and step size for the bounding procedure
-				int numThreads = 1;
-				int numNodes = data.nNode-1;
-				int stepSize = 1;
-				DataHandler d = new DataHandler(dataFile, instanceType, instanceNumber, numThreads, stepSize);
-				d.readSolomon(numNodes, data.capacity);
-				// Generate an ESPPRC instance with dual variables taken from an iteration of the CG (only available for the R-200 series!)
-				d.generateInstance(alpha);
-				System.out.println("done load");
-////////////////////////////////////////////////// BOUNDING PROCEDURE //////////////////////////////////////////////////////////////////////////
-				long tNow = System.currentTimeMillis(); 							// Measure current execution time
-
-				GraphManager.calNaiveDualBound();									// Calculate a naive lower bound
-				GraphManager.capIncumbent=d.Q;				// Capture the depot upper time window
-				int lowerCapLimit = 2; 											// Lower time (resource) limit to stop the bounding procedure. For 100-series we used 50 and for 200-series we used 100;
-				int capIndex=0;													// Index to store the bounds
-				//System.out.println("initialize");
-				while(GraphManager.capIncumbent>=lowerCapLimit){					// Check the termination condition
-
-					capIndex=(int) Math.ceil((GraphManager.capIncumbent/DataHandler.boundStep));		// Calculate the current index
-					for (int x = 1; x <= DataHandler.n; x++) {
-						//GraphManager.nodes[x].pulseBound(0, GraphManager.timeIncumbent, 0 , new ArrayList(), x,0); 	// Solve an ESPPRC for all nodes given the time incumbent
-						GraphManager.nodes[x].pulseMTBound(GraphManager.capIncumbent, 0, 0 , new ArrayList(), x,0,0); 	// Solve an ESPPRC for all nodes given the time incumbent
-
-					}
-
-					for(int x=1; x<=DataHandler.n; x++){
-						GraphManager.boundsMatrix[x][capIndex]=GraphManager.bestCost[x];				// Store the best cost found for each node into the bounds matrix
-					}
-					GraphManager.overallBestCost=GraphManager.PrimalBound;					// Store the best cost found over all the nodes
-					GraphManager.capIncumbent-=DataHandler.boundStep;						// Update the time incumbent
+					cut_enforce.add(master.addConstr(expr, GRB.GREATER_EQUAL,c.getRhs(), "cut"));
+					//return 0;
 				}
 
-				System.out.println("here!");
-				System.out.println(Arrays.toString(GraphManager.boundsMatrix[0]));
-////////////////////////////////////////////////END OF BOUNDING PROCEDURE //////////////////////////////////////////////////////////////////////////
 
-				// Run pulse
-				GraphManager.capIncumbent+=DataHandler.boundStep; 				// Set time incumbent to the last value solved
-				GraphManager.PrimalBound=0;										// Reset the primal bound
-				GraphManager.finalNode.Path = new ArrayList();
-				GraphManager.nodes[0].pulseMT(0, 0, 0, new ArrayList(),0,0); 	// Run the pulse procedure on the source node
+				Set<Route>newroute = new HashSet<Route>();
+				data.setThread(39);
+				//RCm_MT pprc = new RCm_MT(data);
+				//RC_MultiThread pprc = new RC_MultiThread(data);
+				RandColW pprc = new RandColW(data);
 
-
-				// Print results
-
-				long time = (long) ((System.currentTimeMillis()-tNow));			// Calculate execution time
-
-				System.out.println("Execution time: "+time/1000.0+" seconds\n");
-
-				System.out.println("************ OPTIMAL SOLUTION *****************\n");
-				System.out.println("Optimal cost: "+GraphManager.finalNode.PathCost);
-				System.out.println("Optimal time: "+GraphManager.finalNode.PathTime);
-				System.out.println("Optimal Load: "+GraphManager.finalNode.PathLoad);
-				System.out.println();
-				System.out.println("Optimal path: ");
-				System.out.println(GraphManager.finalNode.Path);
-
-				if(GraphManager.finalNode.PathCost < -1E-6){
+				if(pprc.solve()) {
 					oncemore = true;
-					for(int s = 0; s < GraphManager.paths.size(); s++){
-						ArrayList<Integer> rls = new ArrayList<>();
-						System.out.println(GraphManager.paths.get(s).toString());
-						for(i = 1; i < GraphManager.paths.get(s).size() - 1; i++){
-							rls.add((Integer) GraphManager.paths.get(s).get(i));
-						}
-						Route r = new Route(rls);
-						System.out.println("number of new route found:" + newroute.size());
+					newroute = pprc.solutionSet;
+					System.out.println("number of new route found:" + newroute.size());
+					int oldnumber = routes.size();
+					for (Route r : newroute) {
 						GRBColumn col = new GRBColumn();
-						for(int v : r.route){
-							System.out.print(v + ",");
+						for (int v : r.route) {
 							col.addTerm(1, cons_visit[v]);
 						}
 						r.updateCost(data.distance);
-						//							System.out.println("Path for "+k+": "+Arrays.toString(r.route.toArray())+" "+r.cost);
-						//							System.out.println(col);
-						GRBVar newvar = master.addVar(0, 1, r.cost, GRB.CONTINUOUS, col,"lambda");
+						GRBVar newvar = master.addVar(0, 1, r.cost, GRB.CONTINUOUS, col, "lambda");
 						lambda.add(newvar);
 						routes.add(r);
-						nColumns += 1;
+						nColumns++;
+						convertRoute2Edge(r, routes.size()-1);
+					}
+					timerBeforeLast = System.currentTimeMillis() - timer;
+					//}
+
+				}
+				// applying pulse to verify no more paths can be generated
+				else {
+					oncemore = false;
+					String dataFile = null;
+					String dir = "Instances/";
+					System.out.println("start pulse");
+					int here;
+					System.out.println(data.fileName);
+
+					String fo = data.fileName;
+					System.out.println(fo);
+					String instanceType = fo.substring(0,fo.length()-3);
+					int instanceNumber = Integer.parseInt(fo.substring(fo.length()-3));
+					String extension = ".txt";
+					dataFile = dir + instanceType + instanceNumber + extension;
+					System.out.println("Instance: "+dataFile);
+					//System.out.println("done load");
+
+					// Read data file and define the following parameters: number of threads, number of nodes, and step size for the bounding procedure
+					int numThreads = 1;
+					int numNodes = data.nNode-1;
+					int stepSize = 1;
+					DataHandler d = new DataHandler(dataFile, instanceType, instanceNumber, numThreads, stepSize);
+					System.out.println("!"+numNodes);
+					d.readSolomon(numNodes, data.capacity);
+					// Generate an ESPPRC instance with dual variables taken from an iteration of the CG (only available for the R-200 series!)
+					d.generateInstance(alpha);
+					System.out.println("done load");
+////////////////////////////////////////////////// BOUNDING PROCEDURE //////////////////////////////////////////////////////////////////////////
+					long tNow = System.currentTimeMillis(); 							// Measure current execution time
+
+					GraphManager.calNaiveDualBound();									// Calculate a naive lower bound
+					GraphManager.capIncumbent=d.Q;				// Capture the depot upper time window
+					int lowerCapLimit = 2; 											// Lower time (resource) limit to stop the bounding procedure. For 100-series we used 50 and for 200-series we used 100;
+					int capIndex=0;													// Index to store the bounds
+					//System.out.println("initialize");
+					while(GraphManager.capIncumbent>=lowerCapLimit){					// Check the termination condition
+
+						capIndex=(int) Math.ceil((GraphManager.capIncumbent/DataHandler.boundStep));		// Calculate the current index
+						for (int x = 1; x <= DataHandler.n; x++) {
+							//GraphManager.nodes[x].pulseBound(0, GraphManager.timeIncumbent, 0 , new ArrayList(), x,0); 	// Solve an ESPPRC for all nodes given the time incumbent
+							GraphManager.nodes[x].pulseMTBound(GraphManager.capIncumbent, 0, 0 , new ArrayList(), x,0,0); 	// Solve an ESPPRC for all nodes given the time incumbent
+
+						}
+
+						for(int x=1; x<=DataHandler.n; x++){
+							GraphManager.boundsMatrix[x][capIndex]=GraphManager.bestCost[x];				// Store the best cost found for each node into the bounds matrix
+						}
+						GraphManager.overallBestCost=GraphManager.PrimalBound;					// Store the best cost found over all the nodes
+						GraphManager.capIncumbent-=DataHandler.boundStep;						// Update the time incumbent
 					}
 
+					System.out.println("here!");
+					System.out.println(Arrays.toString(GraphManager.boundsMatrix[0]));
+////////////////////////////////////////////////END OF BOUNDING PROCEDURE //////////////////////////////////////////////////////////////////////////
+
+					// Run pulse
+					GraphManager.capIncumbent+=DataHandler.boundStep; 				// Set time incumbent to the last value solved
+					GraphManager.PrimalBound=0;										// Reset the primal bound
+					GraphManager.finalNode.Path = new ArrayList();
+					GraphManager.nodes[0].pulseMT(0, 0, 0, new ArrayList(),0,0); 	// Run the pulse procedure on the source node
+
+
+					// Print results
+
+					long time = (long) ((System.currentTimeMillis()-tNow));			// Calculate execution time
+
+					System.out.println("Execution time: "+time/1000.0+" seconds\n");
+
+					System.out.println("************ OPTIMAL SOLUTION *****************\n");
+					System.out.println("Optimal cost: "+GraphManager.finalNode.PathCost);
+					System.out.println("Optimal time: "+GraphManager.finalNode.PathTime);
+					System.out.println("Optimal Load: "+GraphManager.finalNode.PathLoad);
+					System.out.println();
+					System.out.println("Optimal path: ");
+					System.out.println(GraphManager.finalNode.Path);
+
+					if(GraphManager.finalNode.PathCost < -1E-6){
+						oncemore = true;
+						for(int s = 0; s < GraphManager.paths.size(); s++){
+							ArrayList<Integer> rls = new ArrayList<>();
+							System.out.println(GraphManager.paths.get(s).toString());
+							for(i = 1; i < GraphManager.paths.get(s).size() - 1; i++){
+								rls.add((Integer) GraphManager.paths.get(s).get(i));
+							}
+							Route r = new Route(rls);
+							System.out.println("number of new route found:" + newroute.size());
+							GRBColumn col = new GRBColumn();
+							for(int v : r.route){
+								col.addTerm(1, cons_visit[v]);
+							}
+							r.updateCost(data.distance);
+
+							GRBVar newvar = master.addVar(0, 1, r.cost, GRB.CONTINUOUS, col,"lambda");
+							lambda.add(newvar);
+							routes.add(r);
+							nColumns += 1;
+							convertRoute2Edge(r, routes.size()-1);
+						}
+
+					}
+
+
+					master.update();
 				}
 
 
+
+				pprc = null;
 				master.update();
 			}
-
-					pprc = null;
-				master.update();
-			}
-
+			lptime = System.currentTimeMillis() - lptime;
 			lowerbound = master.get(DoubleAttr.ObjVal);
+
+			/**
+			 * Enumeration!
+			 */
+
+			//***************************
+			//*****Enumeration!
+			//****************************
+			double[] alpha = new double[nNode];
+			//double[] gamma = new double[K];
+			for(i = 1; i < nNode; i++){
+				alpha[i] = cons_visit[i].get(DoubleAttr.Pi);
+			}
+
+			// dual solution for cuts
+			double[] beta = new double[cut_enforce.size()];
+			for(i = 1; i < cut_enforce.size(); i++){
+				beta[i] = cut_enforce.get(i).get(DoubleAttr.Pi);
+			}
+
+			System.out.println("print dual solutions");
+			System.out.println("alpha");
+			System.out.println(Arrays.toString(alpha));
+
+			//				if(oncemore == false)
+			//					break;
+			// update cost for each pricing problem
+			System.out.println("Solving pricing problem");
+			for (i = 1; i < nNode; i++){
+				if(data.distance[0][i] > 10000 ){
+					data.cost[0][i] = data.distance[0][i];
+				}else{
+					data.cost[0][i] = data.distance[0][i] - alpha[i];
+				}
+			}
+			for (j = 0; j < nNode; j++){
+				if(data.distance[j][nNode] > 10000 ){
+					data.cost[j][nNode] = data.distance[j][0];
+				}else{
+					data.cost[j][nNode] = data.distance[j][0];
+				}
+				//data.cost[u][0] = data.vDistanceMatrix.get(k)[u][0];
+				for (i = 0; i < nNode; i++){
+					if(data.distance[j][i] > 10000 ){
+						data.cost[j][i] = data.distance[j][i];
+					}else{
+						data.cost[j][i] = data.distance[j][i] - alpha[i];
+					}
+				}
+			}
+			for(int l = 0; l < cut_enforce.size(); l++) {
+				Cut c = cutPool.get(l);
+				for(int[] e : c.getEdges()){
+					int from = e[0];
+					int to = e[1];
+					data.cost[from][to] -= beta[l];
+					data.cost[to][from] -= beta[l];
+					if(from == 0) data.cost[to][nNode] -= beta[l];
+					if(to == 0) data.cost[from][nNode] -= beta[l];
+				}
+			}
+			Set<Route>newroute = new HashSet<Route>();
+			etime = System.currentTimeMillis();
+			data.setThread(78);
+			RandColEnum pprc = new RandColEnum(data);
+			//pprc.setEpsilon(getUpperbound(), lowerbound);
+			count = routes.size();
+//			if(pprc.solve()) {
+//				newroute = pprc.solutionSet;
+//				System.out.println("number of new route found:" + newroute.size());
+//				for (Route r : newroute) {
+//					r.updateCost(data.distance);
+//					routes.add(r);
+//				}
+//			}
+			count = routes.size()-count;
+			etime = System.currentTimeMillis()-etime;
+
 
 			// Dispose of model and environment
 			master.dispose();
@@ -361,7 +549,7 @@ public class ColumnGeneration_RCM {
 			GRBEnv   env   = new GRBEnv(logName);
 			GRBModel master = new GRBModel(env);
 			master.set(GRB.IntParam.Threads, 39);
-
+			master.set(GRB.DoubleParam.TimeLimit, 1800);
 
 			//double cost;
 			//update cost of routes
@@ -374,16 +562,6 @@ public class ColumnGeneration_RCM {
 			tot_size = routes.size();
 
 
-			if (tot_size < 1) { //execute only the first time
-				System.out.println("Initialize!");
-				for(i = 1; i < nNode; i++){
-					ArrayList<Integer> temp = new ArrayList<Integer>(1);
-					temp.add(i);Route tempRoute = new Route(temp);
-					tempRoute.updateCost(data.distance);
-					routes.add(tempRoute);
-				}
-			}
-			routes = savings(routes);
 			for(Route r : routes){
 				r.updateCost(data.distance);
 			}
@@ -420,7 +598,9 @@ public class ColumnGeneration_RCM {
 				cons_visit[j] = master.addConstr(expr, GRB.GREATER_EQUAL, 1, "c1"+j);
 			}
 
+			iptime = System.currentTimeMillis();
 			master.optimize();
+			iptime = System.currentTimeMillis() - iptime;
 			// print master status
 			double objval = Double.MAX_VALUE;
 
@@ -428,12 +608,7 @@ public class ColumnGeneration_RCM {
 			if (optimstatus == GRB.Status.OPTIMAL) {
 				objval = master.get(DoubleAttr.ObjVal);
 				System.out.println("Current Optimal objective: " + objval);
-			} else{
-				System.out.println("CG: relaxation infeasible!");
-				return 1E10;
 			}
-
-
 
 
 
@@ -479,7 +654,7 @@ public class ColumnGeneration_RCM {
 		}
 	}
 
-	public ArrayList<Route> savings(ArrayList<Route> preRoutes) {
+	public ArrayList<Route> savings(List<Route> preRoutes) {
 		ArrayList<Route> result = new ArrayList<>();
 		boolean flag = true;
 		while (flag){
@@ -526,7 +701,7 @@ public class ColumnGeneration_RCM {
 		return result;
 	}
 
-	public boolean checkFeasi(ArrayList<Integer> route){
+	public boolean checkFeasi(List<Integer> route){
 		boolean result = false;
 		if(route.size() == 0)
 			return false;

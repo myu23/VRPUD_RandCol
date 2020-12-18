@@ -29,11 +29,12 @@ public class Data {
     public Thread[] threads;
 
 
-    public Data(String file, int n, int l){
+
+    public Data(String folder, String file, int n, int l){
         try {
             this.nNode = n;
             this.fileName = file.split("\\.txt")[0];
-            FileReader inputFile = new FileReader(file);
+            FileReader inputFile = new FileReader(folder+file);
             BufferedReader bufferReader = new BufferedReader(inputFile);
             String line;
             String[] entry;
@@ -46,12 +47,13 @@ public class Data {
             //read nNode and nVehicle
             line = bufferReader.readLine();
             entry = line.trim().split("\\s+");
+            System.out.println(line);
             this.nVehicle = Integer.parseInt(entry[0]);
             this.capacity = l;//Integer.parseInt(entry[1]);
 
             //initialize parameters
-            this.coor_x = new int[nNode];
-            this.coor_y = new int[nNode];
+            this.coor_x = new int[nNode+1];
+            this.coor_y = new int[nNode+1];
             this.demand = new int[nNode+1];
             this.tw_a = new int[nNode+1];
             this.tw_b = new int[nNode+1];
@@ -75,6 +77,8 @@ public class Data {
                 this.tw_b[i] = this.tw_b[0];//Integer.parseInt(entry[5]);
                 this.service_time[i] = 0;//Integer.parseInt(entry[6]);
             }
+            this.coor_x[nNode] = this.coor_x[0];
+            this.coor_y[nNode] = this.coor_y[0];
             this.tw_a[nNode] = this.tw_a[0];
             this.tw_b[nNode] = this.tw_b[0];
             this.demand[nNode] = this.demand[0];
@@ -97,10 +101,11 @@ public class Data {
         }
     }
 
-    public Data(String file, int L){
+    public Data(String folder, String file, int L){
         try {
             this.fileName = file.split("\\.vrp")[0];
-            FileReader inputFile = new FileReader(file);
+            System.out.println(this.fileName);
+            FileReader inputFile = new FileReader(folder+file);
             BufferedReader bufferReader = new BufferedReader(inputFile);
             String line;
             String[] entry;
@@ -259,7 +264,9 @@ public class Data {
 
     public static void main(String[] args){
         //for test purpose
-        Data data = new Data("./solomon_100/C103.txt", 50, 4);
+        String folder = "./Instances/solomon_100/";
+        String file = "C101.txt";
+        Data data = new Data(folder, file, 50, 4);
         System.out.println(data.fileName);
         System.out.println("Test data");
         System.out.println("n, k, capacity: "+ data.nNode + " " + data.nVehicle + " "+data.capacity);
@@ -275,7 +282,6 @@ public class Data {
                         System.out.println(i+ ": "+data.coor_x[i]+","+data.coor_y[i]);
                         System.out.println(j+ ": "+data.coor_x[j]+","+data.coor_y[j]);
                         System.out.println(k+ ": "+data.coor_x[k]+","+data.coor_y[k]);
-
                         System.out.println(data.distance[i][k] +" " +data.distance[k][j] +" "+ data.distance[i][j]);
                     }
 

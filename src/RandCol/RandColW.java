@@ -1,7 +1,5 @@
 package RandCol;
 
-import miaoyu.helper.Data;
-import miaoyu.helper.Route;
 
 import java.util.*;
 
