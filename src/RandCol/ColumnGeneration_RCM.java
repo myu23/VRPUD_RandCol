@@ -109,7 +109,7 @@ public class ColumnGeneration_RCM {
 		int i, j, k;
 		try {
 
-			String logName = "log\\RC_"+data.fileName;
+			String logName = "log/RC_"+data.fileName;
 			File f = new File(logName);
 			f.delete();
 			GRBEnv   env   = new GRBEnv(logName);
@@ -308,7 +308,7 @@ public class ColumnGeneration_RCM {
 
 
 				Set<Route>newroute = new HashSet<Route>();
-				data.setThread(39);
+				data.setThread(8);
 				//RCm_MT pprc = new RCm_MT(data);
 				//RC_MultiThread pprc = new RC_MultiThread(data);
 				RandColW pprc = new RandColW(data);
@@ -328,6 +328,25 @@ public class ColumnGeneration_RCM {
 						lambda.add(newvar);
 						routes.add(r);
 						nColumns++;
+						int prev = 0;
+						for(int cur : r.route){
+							List<Integer> lst = null;
+							if(prev < cur){
+								lst = edgeToCut[prev][cur];
+							}else{
+								lst = edgeToCut[cur][prev];
+							}
+							for(int c : lst){
+								col.addTerm(1, cut_enforce.get(c));
+							}
+							prev = cur;
+						}
+						if(prev != 0){
+							List<Integer> lst = edgeToCut[0][prev];
+							for(int c : lst){
+								col.addTerm(1, cut_enforce.get(c));
+							}
+						}
 						convertRoute2Edge(r, routes.size()-1);
 					}
 					timerBeforeLast = System.currentTimeMillis() - timer;
@@ -424,6 +443,25 @@ public class ColumnGeneration_RCM {
 							GRBColumn col = new GRBColumn();
 							for(int v : r.route){
 								col.addTerm(1, cons_visit[v]);
+							}
+							int prev = 0;
+							for(int cur : r.route){
+								List<Integer> lst = null;
+								if(prev < cur){
+									lst = edgeToCut[prev][cur];
+								}else{
+									lst = edgeToCut[cur][prev];
+								}
+								for(int c : lst){
+									col.addTerm(1, cut_enforce.get(c));
+								}
+								prev = cur;
+							}
+							if(prev != 0){
+								List<Integer> lst = edgeToCut[0][prev];
+								for(int c : lst){
+									col.addTerm(1, cut_enforce.get(c));
+								}
 							}
 							r.updateCost(data.distance);
 

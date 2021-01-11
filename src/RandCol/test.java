@@ -21,7 +21,7 @@ public class test {
                 if(!f.toString().endsWith("RC161.txt")){
                     continue;
                 }
-                String[] temp = f.toString().split("\\\\");
+                String[] temp = f.toString().split("/");
                 String filename = temp[temp.length-1];
                 for(int l = 4; l < 5; l++){
                     for(int n = 201; n <=201; n=n+50){
