@@ -66,26 +66,34 @@ public class Seperator2 {
         }
         double tot = 0;
         double tot2 = 0;
-        for(int i = 1; i < n; i++){
-            if(set[i]){
-                tot += gStar.x[0][i];
-            }else {
-                tot2 += gStar.x[0][i];
+        for(int i = 0; i < n; i++){
+//            if(set[i]){
+//                tot += gStar.x[0][i];
+//            }else {
+//                tot2 += gStar.x[0][i];
+//            }
+            for(int j = 0; j < n; j++){
+                if(set[i] ^ set[j]){
+                    if(set[j]) tot += gStar.x[i][j];
+                    else tot2 += gStar.x[i][j];
+                }
             }
         }
         int r = (int)Math.ceil(1.0*(comp.size())/Q);
-        if(tot < 2*r-1e-6){
-            System.out.println(comp+":"+tot);
-            Cut cut = new Cut(set, 2*r);
+        if(tot+1e-6 < r){
+            System.out.println(comp+":"+tot+"-"+r);
+            Cut cut = new Cut(set, r);
             cutPool.add(cut);
         }
-        r = (int) Math.ceil(1.0*(n-1-comp.size())/Q);
-        if(tot2 < 2*r-1e-6){
-            boolean[] cset = new boolean[n];
-            for(int i = 1; i < n; i++) cset[i] = !set[i];
-            Cut cut = new Cut(cset, 2*r);
-            cutPool.add(cut);
-        }
+//        r = (int)Math.ceil(1.0*(n-1-comp.size())/Q);
+//        if(tot2 < r-1e-6){
+//            boolean[] cset = new boolean[n];
+//
+//            for(int i = 1; i < n; i++) cset[i] = !set[i];
+//            System.out.println(comp+":"+tot2+"-"+r);
+//            Cut cut = new Cut(cset, r);
+//            cutPool.add(cut);
+//        }
     }
 
 
@@ -194,6 +202,9 @@ public class Seperator2 {
 //                System.out.println(Arrays.toString(x[i]));
         }
     }
+
+
+
     public class UnionFind {
         private int count; // number of disjoint sets
         private int[] parent;

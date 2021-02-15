@@ -29,7 +29,7 @@ public class test {
 //                        if(getUpperbound(data.capacity, data.fileName, data.nNode) > 10){
 //                            continue;
 //                        }
-                        ColumnGeneration_RCM cg = new ColumnGeneration_RCM(data);
+                        ColumnGeneration_RCM2 cg = new ColumnGeneration_RCM2(data);
                         cg.solve();
                         cg.solveMIP();
                         ArrayList<String> output = new ArrayList<>();

@@ -57,12 +57,20 @@ public class Cut {
 
     public void generateEdge(){
         for(int i = 0; i < set.length; i++){
-            for(int j = i+1; j < set.length; j++){
-                if(set[i]^set[j]){
+            for(int j = 0; j < set.length; j++){
+                if(set[j] && (set[i]^set[j])){
                     edges.add(new int[]{i, j});
                 }
+
             }
         }
+//        for(int i = 0; i < set.length; i++){
+//            for(int j = i+1; j < set.length; j++){
+//                if((set[i]^set[j])){
+//                    edges.add(new int[]{i, j});
+//                }
+//            }
+//        }
     }
     @Override
     public boolean equals(Object o) {
@@ -70,7 +78,7 @@ public class Cut {
         if (o == null || getClass() != o.getClass()) return false;
         Cut cut = (Cut) o;
         return Double.compare(cut.getRhs(), getRhs()) == 0 &&
-                Arrays.equals(getSet(), cut.getSet());
+                Arrays.equals(getSet(), cut.getSet()); 
     }
 
     @Override

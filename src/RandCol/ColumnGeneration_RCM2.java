@@ -14,13 +14,14 @@ import pulse.GraphManager;
 import java.io.*;
 import java.util.*;
 
-public class ColumnGeneration_RCM {
+public class ColumnGeneration_RCM2 {
 	public Data data;
 	public boolean isStrongBranching;
 	public double lowerbound;
 	public double upperbound;
 	public boolean initialized;
 	public List<Route> routes;
+	public Set<Route> routeSet;
 	public List<Route> artificialRoute;
 	public List<Route> solRoutes;
 	private int nNode;
@@ -41,7 +42,7 @@ public class ColumnGeneration_RCM {
 	public List<Cut> cutPool;
 	public List<Integer>[][] edgeToCut;
 	public List<Integer>[][] edgeToRoute;
-
+	public boolean duplicateRoute = false;
 	public double getUpperbound(){
 		ArrayList<String[]> rawData = new ArrayList<String[]>();
 		String csvFile = "Data\\UCVRP"+data.capacity+"\\RandCol-multi\\"+data.fileName+"-"+data.nNode+"-ii.csv";
@@ -75,16 +76,13 @@ public class ColumnGeneration_RCM {
 	public void convertRoute2Edge(Route r, int idx){
 		int prev = 0;
 		for(int cur : r.route){
-			if(prev < cur){
-				edgeToRoute[prev][cur].add(idx);
-			}else{
-				edgeToRoute[cur][prev].add(idx);
-			}
+			edgeToRoute[prev][cur].add(idx);
 			prev = cur;
 		}
-		if(prev != 0) edgeToRoute[0][prev].add(idx);
+		if(prev != 0) edgeToRoute[prev][0].add(idx);
 	}
-	public ColumnGeneration_RCM(Data d){
+
+	public ColumnGeneration_RCM2(Data d){
 		this.data = d;
 		this.nNode = d.nNode;
 		this.nVehicle = d.nVehicle;
@@ -98,10 +96,11 @@ public class ColumnGeneration_RCM {
 		this.edgeToRoute = new List[nNode][nNode];
 		this.edgeToCut = new List[nNode][nNode];
 		for(int i = 0; i < nNode; i++)
-			for(int j = i+1; j < nNode; j++){
+			for(int j = 0; j < nNode; j++){
 				edgeToRoute[i][j] = new ArrayList<>();
 				edgeToCut[i][j] = new ArrayList<>();
 			}
+		this.routeSet = new HashSet<>();
 	}
 
 
@@ -114,7 +113,7 @@ public class ColumnGeneration_RCM {
 			f.delete();
 			GRBEnv   env   = new GRBEnv(logName);
 			GRBModel master = new GRBModel(env);
-			master.set(GRB.IntParam.Threads, 39);
+			master.set(GRB.IntParam.Threads, 8);
 
 
 			//double cost;
@@ -142,14 +141,16 @@ public class ColumnGeneration_RCM {
 			System.out.println("original routes: "+routes.size());
 
 			routes = savings(routes);
-			int id = 0;
-			for(Route r : routes){
-				r.updateCost(data.distance);
-				convertRoute2Edge(r, id);
-				id++;
+
+			for(int p = 0; p < routes.size(); p++){
+				routes.get(p).updateCost(data.distance);
+				convertRoute2Edge(routes.get(p), p);
+			}
+			for( k = 0; k < nNode; k++){
+				System.out.println(k+":"+edgeToRoute[0][k]);
 			}
 			System.out.println("initial routes: "+routes.size());
-
+			routeSet.addAll(routes);
 			// create variables
 			GRBVarArray lambda = new GRBVarArray();
 			for(int p = 0; p < routes.size(); p++){
@@ -185,9 +186,7 @@ public class ColumnGeneration_RCM {
 			// initialize cut contraints list
 			List<GRBConstr> cut_enforce = new ArrayList<>();
 
-
-
-
+			master.update();
 			boolean oncemore = true;
 			double objval = Double.MAX_VALUE;
 			timer = System.currentTimeMillis();
@@ -217,6 +216,8 @@ public class ColumnGeneration_RCM {
 				}
 
 
+
+
 				// dual solution for visited node
 				double[] alpha = new double[nNode];
 				//double[] gamma = new double[K];
@@ -236,22 +237,22 @@ public class ColumnGeneration_RCM {
 
 				// update cost for each pricing problem
 				System.out.println("Solving pricing problem");
-				for (i = 1; i < nNode; i++){
-					if(data.distance[0][i] > 1000 ){
-						data.cost[0][i] = data.distance[0][i];
-					}else{
-						data.cost[0][i] = data.distance[0][i] - alpha[i]/2;
-					}
-				}
+//				for (i = 1; i < nNode; i++){
+//					if(data.distance[0][i] > 10000 ){
+//						data.cost[0][i] = data.distance[0][i];
+//					}else{
+//						data.cost[0][i] = data.distance[0][i] - alpha[i]/2;
+//					}
+//				}
 				for (j = 0; j < nNode; j++){
-					if(data.distance[j][nNode] > 1000 ){
+					if(data.distance[j][0] > 100000){
 						data.cost[j][nNode] = data.distance[j][0];
 					}else{
 						data.cost[j][nNode] = data.distance[j][0]- alpha[j]/2;
 					}
 					//data.cost[u][0] = data.vDistanceMatrix.get(k)[u][0];
 					for (i = 0; i < nNode; i++){
-						if(data.distance[j][i] > 1000 ){
+						if(data.distance[j][i] > 100000 ){
 							data.cost[j][i] = data.distance[j][i];
 						}else{
 							data.cost[j][i] = data.distance[j][i] - alpha[i]/2- alpha[j]/2;
@@ -265,10 +266,9 @@ public class ColumnGeneration_RCM {
 					for(int[] e : c.getEdges()){
 						int from = e[0];
 						int to = e[1];
-						data.cost[from][to] -= beta[l];
-						data.cost[to][from] -= beta[l];
-						if(from == 0) data.cost[to][nNode] -= beta[l];
 						if(to == 0) data.cost[from][nNode] -= beta[l];
+						else data.cost[from][to] -= beta[l];
+
 					}
 				}
 
@@ -280,31 +280,28 @@ public class ColumnGeneration_RCM {
 						routes.get(i).sol = xroute[i];
 					}
 				}
-				Seperator spt = new Seperator(nNode, sol_routes, data.capacity);
+				Seperator2 spt = new Seperator2(nNode, sol_routes, data.capacity);
 				spt.generate();
 				if(spt.getCutPool().size() != 0) oncemore = true;
 				for(Cut c : spt.getCutPool()){
-//					System.out.println(Arrays.toString(c.getSet()));
-//					for(int[] edge : c.getEdges()){
-//						System.out.println(Arrays.toString(edge));
-//					}
-//					System.out.println(c.getRhs());
+
 					this.cutPool.add(c);
+
 					expr = new GRBLinExpr();
 					for(int[] edge: c.getEdges()){
-						if(edge[0] < edge[1]){
-							for(Integer idx : edgeToRoute[edge[0]][edge[1]]){
+						for(Integer idx : edgeToRoute[edge[0]][edge[1]]){
 								expr.addTerm(1, lambda.getElement(idx));
-							}
-						}else{
-							for(Integer idx : edgeToRoute[edge[1]][edge[0]]){
-								expr.addTerm(1, lambda.getElement(idx));
-							}
 						}
+						edgeToCut[edge[0]][edge[1]].add(cut_enforce.size());
 					}
 					cut_enforce.add(master.addConstr(expr, GRB.GREATER_EQUAL,c.getRhs(), "cut"));
-					//return 0;
+//					for( k = 0; k < nNode; k++){
+//						System.out.println(k+":"+edgeToRoute[0][k]);
+//					}
+//					System.out.println(routes.get(4).route);
+//					return 0;
 				}
+
 
 
 				Set<Route>newroute = new HashSet<Route>();
@@ -324,33 +321,41 @@ public class ColumnGeneration_RCM {
 							col.addTerm(1, cons_visit[v]);
 						}
 						r.updateCost(data.distance);
-
-						routes.add(r);
 						nColumns++;
 						int prev = 0;
+						Map<Integer, Integer> cutCounter = new HashMap<>();
 						for(int cur : r.route){
-							List<Integer> lst = null;
-							if(prev < cur){
-								lst = edgeToCut[prev][cur];
-							}else{
-								lst = edgeToCut[cur][prev];
-							}
+							List<Integer> lst = edgeToCut[prev][cur];
 							for(int c : lst){
-								col.addTerm(1, cut_enforce.get(c));
+								//col.addTerm(1, cut_enforce.get(c));
+								cutCounter.put(c, cutCounter.getOrDefault(c, 0)+1);
 							}
 							prev = cur;
 						}
 						if(prev != 0){
-							List<Integer> lst = edgeToCut[0][prev];
+							List<Integer> lst = edgeToCut[prev][0];
+
 							for(int c : lst){
-								col.addTerm(1, cut_enforce.get(c));
+								cutCounter.put(c, cutCounter.getOrDefault(c, 0)+1);
+
+								//col.addTerm(1, cut_enforce.get(c));
 							}
 						}
-						convertRoute2Edge(r, routes.size()-1);
+						for(Integer c : cutCounter.keySet())
+							col.addTerm(cutCounter.get(c), cut_enforce.get(c));
 						GRBVar newvar = master.addVar(0, 1, r.cost, GRB.CONTINUOUS, col, "lambda");
 						lambda.add(newvar);
+
+						convertRoute2Edge(r, routes.size());
+
+						routes.add(r);
+						if(routeSet.contains(r)) duplicateRoute = true;
+						else routeSet.add(r);
 					}
+					master.update();
 					timerBeforeLast = System.currentTimeMillis() - timer;
+					//}
+					if(duplicateRoute) System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!");
 
 				}
 				// applying pulse to verify no more paths can be generated
@@ -445,24 +450,26 @@ public class ColumnGeneration_RCM {
 								col.addTerm(1, cons_visit[v]);
 							}
 							int prev = 0;
+							Map<Integer, Integer> cutCounter = new HashMap<>();
 							for(int cur : r.route){
-								List<Integer> lst = null;
-								if(prev < cur){
-									lst = edgeToCut[prev][cur];
-								}else{
-									lst = edgeToCut[cur][prev];
-								}
+								List<Integer> lst = edgeToCut[prev][cur];
 								for(int c : lst){
-									col.addTerm(1, cut_enforce.get(c));
+									//col.addTerm(1, cut_enforce.get(c));
+									cutCounter.put(c, cutCounter.getOrDefault(c, 0)+1);
 								}
 								prev = cur;
 							}
 							if(prev != 0){
-								List<Integer> lst = edgeToCut[0][prev];
+								List<Integer> lst = edgeToCut[prev][0];
+
 								for(int c : lst){
-									col.addTerm(1, cut_enforce.get(c));
+									cutCounter.put(c, cutCounter.getOrDefault(c, 0)+1);
+
+									//col.addTerm(1, cut_enforce.get(c));
 								}
 							}
+							for(Integer c : cutCounter.keySet())
+								col.addTerm(cutCounter.get(c), cut_enforce.get(c));
 							r.updateCost(data.distance);
 
 							GRBVar newvar = master.addVar(0, 1, r.cost, GRB.CONTINUOUS, col,"lambda");
@@ -470,6 +477,7 @@ public class ColumnGeneration_RCM {
 							routes.add(r);
 							nColumns += 1;
 							convertRoute2Edge(r, routes.size()-1);
+							master.update();
 						}
 
 					}
@@ -501,7 +509,7 @@ public class ColumnGeneration_RCM {
 
 			// dual solution for cuts
 			double[] beta = new double[cut_enforce.size()];
-			for(i = 0; i < cut_enforce.size(); i++){
+			for(i = 1; i < cut_enforce.size(); i++){
 				beta[i] = cut_enforce.get(i).get(DoubleAttr.Pi);
 			}
 
