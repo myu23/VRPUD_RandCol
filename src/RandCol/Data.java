@@ -34,6 +34,7 @@ public class Data {
         try {
             this.nNode = n;
             this.fileName = file.split("\\.txt")[0];
+
             FileReader inputFile = new FileReader(folder+file);
             BufferedReader bufferReader = new BufferedReader(inputFile);
             String line;
@@ -48,7 +49,7 @@ public class Data {
             line = bufferReader.readLine();
             entry = line.trim().split("\\s+");
             System.out.println(line);
-            this.nVehicle = Integer.parseInt(entry[0]);
+//            this.nVehicle = Integer.parseInt(entry[0]);
             this.capacity = l;//Integer.parseInt(entry[1]);
 
             //initialize parameters
@@ -124,8 +125,8 @@ public class Data {
             }
 
             //initialize parameters
-            this.coor_x = new int[nNode];
-            this.coor_y = new int[nNode];
+            this.coor_x = new int[nNode+1];
+            this.coor_y = new int[nNode+1];
             this.demand = new int[nNode+1];
             this.tw_a = new int[nNode+1];
             this.tw_b = new int[nNode+1];
@@ -139,7 +140,7 @@ public class Data {
                 this.demand[i] = 1;//Integer.parseInt(entry[3]);
                 this.tw_a[i] = 0;//Integer.parseInt(entry[4]);
                 if(i == 0){
-                    this.tw_b[i] = 5000;
+                    this.tw_b[i] = 50000;
                     this.demand[i] = 0;
 
                 }
@@ -149,6 +150,8 @@ public class Data {
                 //this.tw_b[i] = Integer.parseInt(entry[5]);
                 this.service_time[i] = 0;//Integer.parseInt(entry[6]);
             }
+            this.coor_x[nNode] = this.coor_x[0];
+            this.coor_y[nNode] = this.coor_y[0];
             this.tw_a[nNode] = this.tw_a[0];
             this.tw_b[nNode] = this.tw_b[0];
             this.demand[nNode] = this.demand[0];
@@ -172,78 +175,6 @@ public class Data {
     }
 
 
-    public Data(String file){
-        try {
-            this.fileName = file.split("\\.vrp")[0];
-            FileReader inputFile = new FileReader(file);
-            BufferedReader bufferReader = new BufferedReader(inputFile);
-            String line;
-            String[] entry;
-            int i, j;
-
-            System.out.println("Reading Data Start");
-            //read redundant lines
-            for (i = 0; i < 7; i++) {
-                line = bufferReader.readLine();
-                entry = line.trim().split("\\s+");
-                if(entry[0].startsWith("DIMENSION")){
-                    this.nNode = Integer.parseInt(entry[entry.length-1]);
-                }else if(entry[0].startsWith("CAPACITY")){
-                    this.capacity = Integer.parseInt(entry[entry.length-1]);
-                }
-            }
-
-            //read nNode and nVehicle
-
-
-
-            //initialize parameters
-            this.coor_x = new int[nNode];
-            this.coor_y = new int[nNode];
-            this.demand = new int[nNode+1];
-            this.tw_a = new int[nNode+1];
-            this.tw_b = new int[nNode+1];
-            this.service_time = new int[nNode+1];
-
-            for(i = 0; i < nNode; i++){
-                line = bufferReader.readLine();
-                entry = line.trim().split("\\s+");
-                this.coor_x[i] = Integer.parseInt(entry[1]);
-                this.coor_y[i] = Integer.parseInt(entry[2]);
-                this.demand[i] = 1;//Integer.parseInt(entry[3]);
-                this.tw_a[i] = 0;//Integer.parseInt(entry[4]);
-                if(i == 0){
-                    this.tw_b[i] = 5000;
-                    this.demand[i] = 0;
-
-                }
-                this.tw_b[i] = this.tw_b[0];//Integer.parseInt(entry[5]);
-                //this.tw_a[i] = Integer.parseInt(entry[4]);
-
-                //this.tw_b[i] = Integer.parseInt(entry[5]);
-                this.service_time[i] = 0;//Integer.parseInt(entry[6]);
-            }
-            this.tw_a[nNode] = this.tw_a[0];
-            this.tw_b[nNode] = this.tw_b[0];
-            this.demand[nNode] = this.demand[0];
-            this.service_time[nNode] = 0;//= this.demand[0];
-
-            this.distance = new double[nNode+1][nNode+1];
-            this.cost = new double[nNode+1][nNode+1];
-            for(i = 0; i < nNode; i++){
-                for(j = i; j < nNode; j++){
-                    this.distance[i][j] = compute_dist_i(i,j);
-                    this.distance[j][i] = this.distance[i][j];
-                }
-                this.distance[i][nNode] = compute_dist_i(i,0);
-                this.distance[nNode][i] = this.distance[i][nNode];
-            }
-            System.out.println("Reading complete");
-            bufferReader.close();
-        }catch(IOException e){
-            System.out.println("Error while reading file line by line: " + e.getMessage());
-        }
-    }
 
     public double compute_dist_i(int i , int j){
         return Math.floor(Math.sqrt(Math.pow(coor_x[i]-coor_x[j], 2) + Math.pow(coor_y[i] - coor_y[j], 2))+0.5);

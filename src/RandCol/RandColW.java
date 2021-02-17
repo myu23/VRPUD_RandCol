@@ -206,7 +206,7 @@ public class RandColW {
             }
 
             if(solutionSet.size() > 0){
-                System.out.println("new routes count"+solutionSet.size());
+                //System.out.println("new routes count"+solutionSet.size());
                 return true;
             }else{
                 return false;

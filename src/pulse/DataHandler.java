@@ -25,7 +25,7 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.StringTokenizer;
 import miaoyu.helper.DataMD;
-import miaoyu.helper.Data;
+import RandCol.Data;
 
 
 public class DataHandler {
@@ -123,11 +123,23 @@ public class DataHandler {
 
 		for (int i = 0; i <= n; i++) {
 			for (int j = 0; j <= n; j++) {
-
 				cost[i][j]= distance[i][j]-pi[i]; //Calculate reduced cost with the dual variable of the tail node of each arc
 			}
 		}
 	}
+
+	public void generateInstance(double[][] cost){
+		for (int i = 0; i < numArcs; i++) {
+			costList[i] = distList[i]-pi[arcs[i][0]]; //Calculate reduced cost with the dual variable of the tail node of each arc
+		}
+
+		for (int i = 0; i <= n; i++) {
+			for (int j = 0; j <= n; j++) {
+				cost[i][j]= distance[i][j]-pi[i]; //Calculate reduced cost with the dual variable of the tail node of each arc
+			}
+		}
+	}
+
 	/**
 	 * Read a Solomon instance
 	 * @throws NumberFormatException
@@ -209,7 +221,7 @@ public class DataHandler {
 				// PODAR CON TW
 				if ((i==0 && (i!=j))  ||((i!=j) && tw_a[i] + service[i] + dINT <= tw_b[j]) ) {
 					distList[arc] = dINT;
-					costList[arc] = cost[i][j];
+					costList[arc] = i==n?dINT:(j==n?d.cost[i][0]:d.cost[i][j]);
 					arcs[arc][0] = i;
 					arcs[arc][1] = j;
 					timeList[arc] = dINT + service[i];
@@ -229,7 +241,88 @@ public class DataHandler {
 		}
 
 	}
+	public void readSolomonData(int numNodes, int q) throws NumberFormatException, IOException {
 
+
+
+		this.Q = q;
+
+		n = numNodes;
+
+		x = new double[n+1];
+		y = new double[n+1];
+		demand = new int[n+1];
+		service =  new int[n+1];
+		tw_a =  new int[n+1];
+		tw_b =  new int[n+1];
+
+		x[0] = d.coor_x[0];
+		y[0] = d.coor_y[0];
+		service[0] = 0;
+		demand[0]=0;
+		tw_a[0]= 0;
+		tw_b[0]= 50000;
+		G = new GraphManager(n+1);
+		int auxNumArcs = (n+1)*(n+1)-(n+1);
+		G.addVertex(new Node(0,demand[0],service[0],-tw_b[0],tw_b[0]));
+		int customerNumber = 1;
+
+		while (customerNumber<=n) {
+			x[customerNumber] = d.coor_x[customerNumber];
+			y[customerNumber] = d.coor_y[customerNumber];
+			service[customerNumber] = 0;//(int)(Double.parseDouble(stringReader[6]));
+			demand[customerNumber]=1;//(int)(Double.parseDouble(stringReader[3]));
+			tw_a[customerNumber]= 0;//(int)(Double.parseDouble(stringReader[4]));
+			tw_b[customerNumber]= tw_b[0];//(int)(Double.parseDouble(stringReader[5]));
+			G.addVertex(new Node(customerNumber,demand[customerNumber],service[customerNumber], tw_a[customerNumber],tw_b[customerNumber]));
+			customerNumber++;
+		}
+
+
+		distance = new double[n + 1][n + 1];
+		cost = new double[n + 1][n + 1];
+		distList = new double[auxNumArcs];
+		costList = new double[auxNumArcs];
+		loadList = new double[auxNumArcs];
+		timeList = new double[auxNumArcs];
+		arcs = new int[auxNumArcs][2];
+		int arc = 0;
+		for (int i = 0; i <= n; i++) {
+			for (int j = 0; j <= n; j++) {
+				// Redondio a un decimal pero est� x10 para que quede entero
+				// para el SP
+				double dINT = dist_i(i,j);
+				distance[i][j] = dINT;
+				distance[j][i] = dINT;
+
+
+				cost[i][j] = d.cost[i][j] ;
+				if(j == 0) cost[i][j] = d.cost[i][n+1];
+//				cost[j][i] = d.cost[j][i] ;
+
+
+				// PODAR CON TW
+				if ((i==0 && (i!=j))  ||((i!=j) && tw_a[i] + service[i] + dINT <= tw_b[j]) ) {
+					distList[arc] = dINT;
+					costList[arc] = cost[i][j];
+					arcs[arc][0] = i;
+					arcs[arc][1] = j;
+					timeList[arc] = dINT + service[i];
+					loadList[arc] = demand[j];
+					int a1 = arc;
+					G.nodes[i].magicIndex.add(a1);
+					arc++;
+				}
+			}
+		}
+
+		numArcs =arc;
+
+		for (int i = 0; i < n; i++) {
+			G.getNodes()[i].autoSort();
+		}
+
+	}
 
 
 	public void readMed(int numNodes, int q) throws NumberFormatException, IOException {
@@ -321,7 +414,7 @@ public class DataHandler {
 	public void readX(int numNodes, int q) throws NumberFormatException, IOException {
 
 
-
+		System.out.println(d.nNode);
 		this.Q = q;
 
 		n = numNodes;
@@ -338,7 +431,7 @@ public class DataHandler {
 		service[0] = 0;
 		demand[0]=0;
 		tw_a[0]= 0;
-		tw_b[0]= 5000;
+		tw_b[0]= 50000;
 		G = new GraphManager(n+1);
 		int auxNumArcs = (n+1)*(n+1)-(n+1);
 		G.addVertex(new Node(0,demand[0],service[0],-tw_b[0],tw_b[0]));
@@ -366,6 +459,7 @@ public class DataHandler {
 		timeList = new double[auxNumArcs];
 		arcs = new int[auxNumArcs][2];
 		int arc = 0;
+		System.out.println("here!");
 		for (int i = 0; i <= n; i++) {
 			for (int j = 0; j <= n; j++) {
 				// Redondio a un decimal pero est� x10 para que quede entero
@@ -377,8 +471,8 @@ public class DataHandler {
 //					distance[i][j] = 0;
 //				}
 
-				cost[i][j] = dINT ;
-				cost[j][i] = dINT;
+				cost[i][j] = d.cost[i][j] ;
+				if(j == 0) cost[i][j] = d.cost[i][n+1];
 
 
 				// PODAR CON TW

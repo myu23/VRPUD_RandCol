@@ -8,42 +8,44 @@ import java.util.Arrays;
 
 public class test {
     public static void main(String[] args){
-        solomon();
+        solomon1();
+        solomon2();
+        solomon3();
+        xinstance();
     }
-    public static void solomon(){
+    public static void solomon1(){
         try{
-            String folder = "Instances/solomon_100/";
+            String folder = "Instances\\solomon_100\\";
             File file = new File(folder);
             System.out.println(Arrays.toString(file.listFiles()));
             int counter = 0;
             for(File f : file.listFiles()) {
-                //System.out.println(f.toString());
-                if(!f.toString().endsWith("RC161.txt")){
+                if(!f.toString().endsWith("101.txt")){
                     continue;
                 }
-                String[] temp = f.toString().split("/");
+                String[] temp = f.toString().split("\\\\");
                 String filename = temp[temp.length-1];
-                for(int l = 4; l < 5; l++){
-                    for(int n = 201; n <=201; n=n+50){
-                        Data data = new Data(folder, filename, n,l);
-//                        if(getUpperbound(data.capacity, data.fileName, data.nNode) > 10){
-//                            continue;
-//                        }
-                        ColumnGeneration_RCM2 cg = new ColumnGeneration_RCM2(data);
+                for(int l = 3; l < 6; l++){
+                    for(int n = 51; n <=101; n=n+10){
+//                        Data data = new Data(folder, filename, l);
+                        Data data = new Data(folder, filename, n, l);
+                        CG_RC cg = new CG_RC(data);
                         cg.solve();
                         cg.solveMIP();
                         ArrayList<String> output = new ArrayList<>();
-                        output.add(data.fileName);
-                        output.add(Integer.toString(data.nNode));
-                        output.add(Integer.toString(cg.nIter));
-                        output.add(Integer.toString(cg.nColumns));
-                        output.add(Double.toString(cg.lowerbound));
-                        output.add(Double.toString(cg.upperbound));
-                        output.add(Double.toString(cg.lptime/1000.0));
-                        output.add(Double.toString(cg.iptime/1000.0));
-                        output.add(Double.toString(cg.etime/1000.0));
-                        output.add(Integer.toString(cg.count));
-                        Functions.writeDataCSV("Results/", data.fileName, output);
+                        output.add("FileName,"+data.fileName);
+                        output.add("nNode,"+Integer.toString(data.nNode));
+                        output.add("nIter,"+Integer.toString(cg.nIter));
+                        output.add("nCols,"+Integer.toString(cg.nColumns));
+                        output.add("LB,"+Double.toString(cg.lowerbound));
+                        output.add("UB_1,"+Double.toString(cg.upperbound_temp));
+                        output.add("UB_2,"+Double.toString(cg.upperbound));
+                        output.add("t_lb,"+Double.toString(cg.lbTime/1000.0));
+                        output.add("t_ub1,"+Double.toString(cg.ub0Time/1000.0));
+                        output.add("t_enum,"+Double.toString(cg.etime/1000.0));
+                        output.add("t_ub2,"+Double.toString(cg.ubTime/1000.0));
+                        output.add("nEnumCols,"+Integer.toString(cg.count));
+                        Functions.writeDataCSV("Results/RandCol/", data.fileName+"-N"+data.nNode+"-K"+data.capacity, output);
                     }
                 }
             }
@@ -51,39 +53,41 @@ public class test {
             System.out.println(e);
         }
     }
-    public static void xinstance(){
+
+    public static void solomon2(){
         try{
-            String folder = "X_unit/";
-            File file = new File("Instances/"+folder);
+            String folder = "Instances\\solomon_100\\";
+            File file = new File(folder);
             System.out.println(Arrays.toString(file.listFiles()));
             int counter = 0;
             for(File f : file.listFiles()) {
+                if(!f.toString().endsWith("121.txt")){
+                    continue;
+                }
                 String[] temp = f.toString().split("\\\\");
                 String filename = temp[temp.length-1];
-                System.out.println(filename);
-                for(int l = 4; l < 5; l++){
-                        Data data = new Data("Instances/"+folder, filename, l);
-//                      if(getUpperbound(data.capacity, data.fileName, data.nNode) > 10){
-//                          continue;
-//                      }
-                        ColumnGeneration_RCM cg = new ColumnGeneration_RCM(data);
+                for(int l = 3; l < 6; l++){
+                    for(int n = 111; n <=151; n=n+10){
+//                        Data data = new Data(folder, filename, l);
+                        Data data = new Data(folder, filename, n, l);
+                        CG_RC cg = new CG_RC(data);
                         cg.solve();
                         cg.solveMIP();
                         ArrayList<String> output = new ArrayList<>();
-                        System.out.println(data.fileName);
-//                        output.add(data.fileName);
-//                        output.add(Integer.toString(data.nNode));
-//                        output.add(Integer.toString(cg.nIter));
-//                        output.add(Integer.toString(cg.nColumns));
-//                        output.add(Double.toString(cg.lowerbound));
-//                        output.add(Double.toString(cg.upperbound));
-//                        output.add(Double.toString(cg.lptime/1000.0));
-//                        output.add(Double.toString(cg.iptime/1000.0));
-//                        output.add(Double.toString(cg.etime/1000.0));
-//                        output.add(Integer.toString(cg.count));
-//                        Functions.writeDataCSV("Results/"+folder, filename, output);
-                        break;
-
+                        output.add("FileName,"+data.fileName);
+                        output.add("nNode,"+Integer.toString(data.nNode));
+                        output.add("nIter,"+Integer.toString(cg.nIter));
+                        output.add("nCols,"+Integer.toString(cg.nColumns));
+                        output.add("LB,"+Double.toString(cg.lowerbound));
+                        output.add("UB_1,"+Double.toString(cg.upperbound_temp));
+                        output.add("UB_2,"+Double.toString(cg.upperbound));
+                        output.add("t_lb,"+Double.toString(cg.lbTime/1000.0));
+                        output.add("t_ub1,"+Double.toString(cg.ub0Time/1000.0));
+                        output.add("t_enum,"+Double.toString(cg.etime/1000.0));
+                        output.add("t_ub2,"+Double.toString(cg.ubTime/1000.0));
+                        output.add("nEnumCols,"+Integer.toString(cg.count));
+                        Functions.writeDataCSV("Results/RandCol/", data.fileName+"-N"+data.nNode+"-K"+data.capacity, output);
+                    }
                 }
             }
         }catch(Exception e){
@@ -91,33 +95,84 @@ public class test {
         }
     }
 
-//    public static double getUpperbound(int k, String fn, int n){
-//        ArrayList<String[]> rawData = new ArrayList<String[]>();
-//        String csvFile = "Data\\UCVRP"+k+"\\RandCol-multi\\"+fn+"-"+n+"-e.csv";
-//        BufferedReader br = null;
-//        String line = "";
-//        String cvsSplitBy = ",";
-//        double ub = 0;
-//        try{
-//            br = new BufferedReader(new FileReader(csvFile));
-//            for(int i = 0; i < 6; i++)
-//                line = br.readLine();
-//            ub = Double.parseDouble(line);
-//            return ub+0.5;
-//        }catch (FileNotFoundException e) {
-//            e.printStackTrace();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        } finally {
-//            if (br != null) {
-//                try {
-//                    br.close();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
-//        return 0;
-//    }
+    public static void solomon3(){
+        try{
+            String folder = "Instances\\solomon_100\\";
+            File file = new File(folder);
+            System.out.println(Arrays.toString(file.listFiles()));
+            int counter = 0;
+            for(File f : file.listFiles()) {
+                if(!f.toString().endsWith("161.txt")){
+                    continue;
+                }
+                String[] temp = f.toString().split("\\\\");
+                String filename = temp[temp.length-1];
+                for(int l = 3; l < 5; l++){
+                    for(int n = 201; n <=351; n=n+50){
+//                        Data data = new Data(folder, filename, l);
+                        Data data = new Data(folder, filename, n, l);
+                        CG_RC cg = new CG_RC(data);
+                        cg.solve();
+                        cg.solveMIP();
+                        ArrayList<String> output = new ArrayList<>();
+                        output.add("FileName,"+data.fileName);
+                        output.add("nNode,"+Integer.toString(data.nNode));
+                        output.add("nIter,"+Integer.toString(cg.nIter));
+                        output.add("nCols,"+Integer.toString(cg.nColumns));
+                        output.add("LB,"+Double.toString(cg.lowerbound));
+                        output.add("UB_1,"+Double.toString(cg.upperbound_temp));
+                        output.add("UB_2,"+Double.toString(cg.upperbound));
+                        output.add("t_lb,"+Double.toString(cg.lbTime/1000.0));
+                        output.add("t_ub1,"+Double.toString(cg.ub0Time/1000.0));
+                        output.add("t_enum,"+Double.toString(cg.etime/1000.0));
+                        output.add("t_ub2,"+Double.toString(cg.ubTime/1000.0));
+                        output.add("nEnumCols,"+Integer.toString(cg.count));
+                        Functions.writeDataCSV("Results/RandCol/", data.fileName+"-N"+data.nNode+"-K"+data.capacity, output);
+                    }
+                }
+            }
+        }catch(Exception e){
+            System.out.println(e);
+        }
+    }
+
+
+
+    public static void xinstance(){
+        try{
+            String folder = "Instances\\X_unit\\";
+            File file = new File(folder);
+            System.out.println(Arrays.toString(file.listFiles()));
+            int counter = 0;
+            for(File f : file.listFiles()) {
+
+                String[] temp = f.toString().split("\\\\");
+                String filename = temp[temp.length-1];
+                for(int l = 3; l < 6; l++){
+                        Data data = new Data(folder, filename, l);
+                        CG_RC cg = new CG_RC(data);
+                        cg.solve();
+                        cg.solveMIP();
+                        ArrayList<String> output = new ArrayList<>();
+                        output.add("FileName,"+data.fileName);
+                        output.add("nNode,"+Integer.toString(data.nNode));
+                        output.add("nIter,"+Integer.toString(cg.nIter));
+                        output.add("nCols,"+Integer.toString(cg.nColumns));
+                        output.add("LB,"+Double.toString(cg.lowerbound));
+                        output.add("UB_1,"+Double.toString(cg.upperbound_temp));
+                        output.add("UB_2,"+Double.toString(cg.upperbound));
+                        output.add("t_lb,"+Double.toString(cg.lbTime/1000.0));
+                        output.add("t_ub1,"+Double.toString(cg.ub0Time/1000.0));
+                        output.add("t_enum,"+Double.toString(cg.etime/1000.0));
+                        output.add("t_ub2,"+Double.toString(cg.ubTime/1000.0));
+                        output.add("nEnumCols,"+Integer.toString(cg.count));
+                        Functions.writeDataCSV("Results/RandCol/", data.fileName+"-N"+data.nNode+"-K"+data.capacity, output);
+                }
+            }
+        }catch(Exception e){
+            System.out.println(e);
+        }
+    }
+
 
 }

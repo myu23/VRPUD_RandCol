@@ -108,7 +108,7 @@ public class ColumnGeneration_RCM2 {
 		int i, j, k;
 		try {
 
-			String logName = "log/RC_"+data.fileName;
+			String logName = "log\\RC_"+data.fileName;
 			File f = new File(logName);
 			f.delete();
 			GRBEnv   env   = new GRBEnv(logName);
@@ -509,7 +509,7 @@ public class ColumnGeneration_RCM2 {
 
 			// dual solution for cuts
 			double[] beta = new double[cut_enforce.size()];
-			for(i = 1; i < cut_enforce.size(); i++){
+			for(i = 0; i < cut_enforce.size(); i++){
 				beta[i] = cut_enforce.get(i).get(DoubleAttr.Pi);
 			}
 
@@ -521,25 +521,19 @@ public class ColumnGeneration_RCM2 {
 			//					break;
 			// update cost for each pricing problem
 			System.out.println("Solving pricing problem");
-			for (i = 1; i < nNode; i++){
-				if(data.distance[0][i] > 10000 ){
-					data.cost[0][i] = data.distance[0][i];
-				}else{
-					data.cost[0][i] = data.distance[0][i] - alpha[i];
-				}
-			}
+
 			for (j = 0; j < nNode; j++){
-				if(data.distance[j][nNode] > 10000 ){
+				if(data.distance[j][0] > 100000){
 					data.cost[j][nNode] = data.distance[j][0];
 				}else{
-					data.cost[j][nNode] = data.distance[j][0];
+					data.cost[j][nNode] = data.distance[j][0]- alpha[j]/2;
 				}
 				//data.cost[u][0] = data.vDistanceMatrix.get(k)[u][0];
 				for (i = 0; i < nNode; i++){
-					if(data.distance[j][i] > 10000 ){
+					if(data.distance[j][i] > 100000 ){
 						data.cost[j][i] = data.distance[j][i];
 					}else{
-						data.cost[j][i] = data.distance[j][i] - alpha[i];
+						data.cost[j][i] = data.distance[j][i] - alpha[i]/2- alpha[j]/2;
 					}
 				}
 			}
@@ -548,12 +542,13 @@ public class ColumnGeneration_RCM2 {
 				for(int[] e : c.getEdges()){
 					int from = e[0];
 					int to = e[1];
-					data.cost[from][to] -= beta[l];
-					data.cost[to][from] -= beta[l];
-					if(from == 0) data.cost[to][nNode] -= beta[l];
 					if(to == 0) data.cost[from][nNode] -= beta[l];
+					else data.cost[from][to] -= beta[l];
+
 				}
 			}
+
+
 			Set<Route>newroute = new HashSet<Route>();
 			etime = System.currentTimeMillis();
 			data.setThread(78);
