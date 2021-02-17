@@ -109,15 +109,18 @@ public class Seperator2 {
             graph[j][n] = Math.max(0, 1.0/Q - gStar.x[0][j]);
         }
         boolean[] set = minCut(graph, 0, n+1);
+        for(int i = 0; i < n; i++)
+            set[i] = !set[i];
         int count = 0;
         for(boolean b : set) if(b) count++;
         double tot = 0;
         double tot2 = 0;
-        for(int i = 1; i < n; i++){
-            if(set[i]){
-                tot += gStar.x[0][i];
-            }else {
-                tot2 += gStar.x[0][i];
+        for(int i = 0; i < n; i++){
+            for(int j = 0; j < n; j++){
+                if(set[i] ^ set[j]){
+                    if(set[j]) tot += gStar.x[i][j];
+                    else tot2 += gStar.x[i][j];
+                }
             }
         }
         int r = (int)Math.ceil(1.0*(count)/Q);
@@ -125,13 +128,8 @@ public class Seperator2 {
             Cut cut = new Cut(set, 2*r);
             cutPool.add(cut);
         }
-        r = (int) Math.ceil(1.0*(n-1-count)/Q);
-        if(tot2 < 2*r-1e-6){
-            boolean[] cset = new boolean[n];
-            for(int i = 1; i < n; i++) cset[i] = !set[i];
-            Cut cut = new Cut(cset, 2*r);
-            cutPool.add(cut);
-        }
+
+
 
     }
     public List<Cut> generate(){
