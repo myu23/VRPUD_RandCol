@@ -475,7 +475,7 @@ public class CG_RC {
 
 
             ub0Time = System.currentTimeMillis();
-            upperbound_temp = solveMIP();
+            upperbound_temp = Math.min(solveMIP(), upperbound);
             ub0Time = System.currentTimeMillis()-ub0Time;
             /**
              * Enumeration!
@@ -572,7 +572,7 @@ public class CG_RC {
         int i, j, k;
         try {
             System.out.println("Start solving IP");
-            String logName = "log\\ES\\"+data.fileName;
+            String logName = "log\\"+data.fileName+"-P";
             File f = new File(logName);
             f.delete();
             GRBEnv   env   = new GRBEnv(logName);

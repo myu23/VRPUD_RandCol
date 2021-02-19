@@ -1,0 +1,12 @@
+FileName,RC101
+nNode,71
+nIter,92
+nCols,1825
+LB,1258.3928571428573
+UB_1,1272.3
+UB_2,1272.3
+t_lb,3.125
+t_ub1,0.797
+t_enum,0.375
+t_ub2,0.781
+nEnumCols,7787

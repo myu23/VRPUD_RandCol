@@ -1,0 +1,12 @@
+FileName,X-n331-k15
+nNode,331
+nIter,144
+nCols,3190
+LB,185000.27777777778
+UB_1,185586.0
+UB_2,185191.0
+t_lb,22.32
+t_ub1,18.074
+t_enum,0.265
+t_ub2,14.725
+nEnumCols,22711

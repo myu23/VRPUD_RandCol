@@ -1,0 +1,12 @@
+FileName,R121
+nNode,111
+nIter,38
+nCols,5615
+LB,2979.9513095238085
+UB_1,3033.2
+UB_2,3033.2
+t_lb,8.5
+t_ub1,3.882
+t_enum,0.609
+t_ub2,3.802
+nEnumCols,64391
