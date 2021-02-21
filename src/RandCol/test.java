@@ -14,8 +14,8 @@ public class test {
 //        solomon1P();
 //        solomon2P();
 //        solomon3P();
-        xinstance();
-//        xinstanceP();
+       //xinstance();
+        xinstanceP();
     }
     public static void solomon1(){
         try{
@@ -279,8 +279,9 @@ public class test {
 
                 String[] temp = f.toString().split("\\\\");
                 String filename = temp[temp.length-1];
-                for(int l = 3; l < 5; l++){
+                for(int l = 3; l < 6; l++){
                         Data data = new Data(folder, filename, l);
+                        if(l <=4 && data.nNode < 800) continue;
                         CG_RC cg = new CG_RC(data);
                         cg.solve();
                         cg.solveMIP();
@@ -315,11 +316,12 @@ public class test {
 
                 String[] temp = f.toString().split("\\\\");
                 String filename = temp[temp.length-1];
-                for(int l = 3; l < 6; l++){
+                for(int l = 3; l < 5; l++){
                     Data data = new Data(folder, filename, l);
+                    if(data.nNode < 900) continue;
                     CG_Pulse cg = new CG_Pulse(data);
                     cg.solve();
-                    cg.solveMIP();
+                    //cg.solveMIP();
                     ArrayList<String> output = new ArrayList<>();
                     output.add("FileName,"+data.fileName);
                     output.add("nNode,"+Integer.toString(data.nNode));

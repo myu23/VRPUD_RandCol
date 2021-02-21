@@ -181,10 +181,7 @@ public class CG_RC {
                     return 1E10;
                 }
 
-                if(System.currentTimeMillis() - timer > 900000) {
-                    lowerbound = objval;
-                    return objval;
-                }
+
                 // primal solution
                 double[] xroute = new double[lambda.getSize()];
                 for(i = 0; i < lambda.getSize(); i++){
