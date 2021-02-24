@@ -12,10 +12,10 @@ public class test {
 //        solomon2();
 //        solomon3();
 //        solomon1P();
-//        solomon2P();
-//        solomon3P();
+        solomon2P();
+        solomon3P();
        //xinstance();
-        xinstanceP();
+        //xinstanceP();
     }
     public static void solomon1(){
         try{
@@ -201,7 +201,7 @@ public class test {
                     for(int n = 111; n <=151; n=n+10){
 //                        Data data = new Data(folder, filename, l);
                         Data data = new Data(folder, filename, n, l);
-                        CG_RC cg = new CG_RC(data);
+                        CG_Pulse cg = new CG_Pulse(data);
                         cg.solve();
                         //cg.solveMIP();
                         ArrayList<String> output = new ArrayList<>();
@@ -242,7 +242,7 @@ public class test {
                     for(int n = 201; n <=351; n=n+50){
 //                        Data data = new Data(folder, filename, l);
                         Data data = new Data(folder, filename, n, l);
-                        CG_RC cg = new CG_RC(data);
+                        CG_Pulse cg = new CG_Pulse(data);
                         cg.solve();
                         //cg.solveMIP();
                         ArrayList<String> output = new ArrayList<>();
