@@ -206,21 +206,21 @@ public class CG_Pulse {
                 // update cost for each pricing problem
                 //System.out.println("Solving pricing problem");
                 for (i = 1; i < nNode; i++){
-                    if(data.distance[0][i] > 1000 ){
+                    if(data.distance[0][i] > 10000 ){
                         data.cost[0][i] = data.distance[0][i];
                     }else{
                         data.cost[0][i] = data.distance[0][i] - alpha[i];
                     }
                 }
                 for (j = 0; j < nNode; j++){
-                    if(data.distance[j][nNode] > 1000 ){
+                    if(data.distance[j][nNode] > 10000 ){
                         data.cost[j][nNode] = data.distance[j][0];
                     }else{
                         data.cost[j][nNode] = data.distance[j][0];
                     }
                     //data.cost[u][0] = data.vDistanceMatrix.get(k)[u][0];
                     for (i = 0; i < nNode; i++){
-                        if(data.distance[j][i] > 1000 ){
+                        if(data.distance[j][i] > 10000 ){
                             data.cost[j][i] = data.distance[j][i];
                         }else{
                             data.cost[j][i] = data.distance[j][i] - alpha[i];
@@ -287,7 +287,7 @@ public class CG_Pulse {
                         d.readSolomonData(numNodes, data.capacity);
 
                     // Generate an ESPPRC instance with dual variables taken from an iteration of the CG (only available for the R-200 series!)
-//                    d.generateInstance(alpha);
+                    //d.generateInstance(alpha);
 //                    System.out.println("done load");
 ////////////////////////////////////////////////// BOUNDING PROCEDURE //////////////////////////////////////////////////////////////////////////
                     long tNow = System.currentTimeMillis(); 							// Measure current execution time

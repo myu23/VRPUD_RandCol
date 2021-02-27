@@ -168,6 +168,8 @@ public class Data {
                 this.distance[i][nNode] = compute_dist_i(i,0);
                 this.distance[nNode][i] = this.distance[i][nNode];
             }
+
+            System.out.println(Arrays.toString(coor_x));
             System.out.println("Reading complete");
             bufferReader.close();
         }catch(IOException e){

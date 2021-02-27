@@ -8,8 +8,8 @@ public class Run{
 
     public static void main(String[] args){
 
-        summaryRand(5);
-        //summaryPulse(5);
+        //summaryRand(5);
+        summaryPulse(5);
     }
 
     public static void summaryRand(int l){

@@ -125,8 +125,8 @@ public class Data {
             }
 
             //initialize parameters
-            this.coor_x = new int[nNode+1];
-            this.coor_y = new int[nNode+1];
+            this.coor_x = new int[nNode];
+            this.coor_y = new int[nNode];
             this.demand = new int[nNode+1];
             this.tw_a = new int[nNode+1];
             this.tw_b = new int[nNode+1];
@@ -150,8 +150,8 @@ public class Data {
                 //this.tw_b[i] = Integer.parseInt(entry[5]);
                 this.service_time[i] = 0;//Integer.parseInt(entry[6]);
             }
-            this.coor_x[nNode] = this.coor_x[0];
-            this.coor_y[nNode] = this.coor_y[0];
+//            this.coor_x[nNode] = this.coor_x[0];
+//            this.coor_y[nNode] = this.coor_y[0];
             this.tw_a[nNode] = this.tw_a[0];
             this.tw_b[nNode] = this.tw_b[0];
             this.demand[nNode] = this.demand[0];
@@ -167,6 +167,7 @@ public class Data {
                 this.distance[i][nNode] = compute_dist_i(i,0);
                 this.distance[nNode][i] = this.distance[i][nNode];
             }
+            //System.out.println(Arrays.toString(coor_x));
             System.out.println("Reading complete");
             bufferReader.close();
         }catch(IOException e){

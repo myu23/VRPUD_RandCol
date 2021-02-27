@@ -473,7 +473,8 @@ public class DataHandler {
 
 				cost[i][j] = d.cost[i][j] ;
 				if(j == 0) cost[i][j] = d.cost[i][n+1];
-
+//				cost[i][j] = dINT ;
+//				cost[j][i] = dINT;
 
 				// PODAR CON TW
 				if ((i==0 && (i!=j))  ||((i!=j) && tw_a[i] + service[i] + dINT <= tw_b[j]) ) {
