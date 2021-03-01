@@ -14,9 +14,9 @@ public class test {
 //        solomon1P();
         //solomon2P();
         //solomon3P();
-       //xinstance();
-        //xinstanceP();
-        xP();
+        xinstanceP34();
+        xinstanceP();
+        xinstance();
     }
 
     public static void xP(){
@@ -318,9 +318,8 @@ public class test {
 
                 String[] temp = f.toString().split("\\\\");
                 String filename = temp[temp.length-1];
-                for(int l = 3; l < 6; l++){
+                for(int l = 5; l < 6; l++){
                         Data data = new Data(folder, filename, l);
-                        if(l <=4 && data.nNode < 800) continue;
                         CG_RC cg = new CG_RC(data);
                         cg.solve();
                         cg.solveMIP();
@@ -355,9 +354,45 @@ public class test {
 
                 String[] temp = f.toString().split("\\\\");
                 String filename = temp[temp.length-1];
+                for(int l = 5; l < 6; l++){
+                    Data data = new Data(folder, filename, l);
+                    CG_Pulse cg = new CG_Pulse(data);
+                    cg.solve();
+                    //cg.solveMIP();
+                    ArrayList<String> output = new ArrayList<>();
+                    output.add("FileName,"+data.fileName);
+                    output.add("nNode,"+Integer.toString(data.nNode));
+                    output.add("nIter,"+Integer.toString(cg.nIter));
+                    output.add("nCols,"+Integer.toString(cg.nColumns));
+                    output.add("LB,"+Double.toString(cg.lowerbound));
+                    output.add("UB_1,"+Double.toString(cg.upperbound_temp));
+                    output.add("UB_2,"+Double.toString(cg.upperbound));
+                    output.add("t_lb,"+Double.toString(cg.lbTime/1000.0));
+                    output.add("t_ub1,"+Double.toString(cg.ub0Time/1000.0));
+                    output.add("t_enum,"+Double.toString(cg.etime/1000.0));
+                    output.add("t_ub2,"+Double.toString(cg.ubTime/1000.0));
+                    output.add("nEnumCols,"+Integer.toString(cg.count));
+                    Functions.writeDataCSV("Results/Pulse/", data.fileName+"-N"+data.nNode+"-K"+data.capacity, output);
+                }
+
+            }
+        }catch(Exception e){
+            System.out.println(e);
+        }
+    }
+    public static void xinstanceP34(){
+        try{
+            String folder = "Instances\\X_unit\\";
+            File file = new File(folder);
+            System.out.println(Arrays.toString(file.listFiles()));
+            int counter = 0;
+            for(File f : file.listFiles()) {
+
+                String[] temp = f.toString().split("\\\\");
+                String filename = temp[temp.length-1];
                 for(int l = 3; l < 5; l++){
                     Data data = new Data(folder, filename, l);
-                    if(data.nNode < 900) continue;
+                    if(data.nNode < 850) continue;
                     CG_Pulse cg = new CG_Pulse(data);
                     cg.solve();
                     //cg.solveMIP();
