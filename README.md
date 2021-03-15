@@ -18,7 +18,7 @@ There are three classes of test instances included in the computational experime
 They are provided in the folder `/Instances`
 
 ## How to Use
-One can create a project and use the code of this repository in Java IDE by selecting "create new project with existing sources". However, the user need to have Gurobi solver installed and add it as global library to this project.
+One can create a project and use the code in this repository in Java IDE by selecting "create new project with existing sources". However, the user need to have Gurobi solver installed and add it as global library to this project.
 
 The driver of the computation is `src/RandCol/NumericalTests`. However, it only serves as an example of how to call the solver. The code may need to be modified based on the operating systems. 
 
