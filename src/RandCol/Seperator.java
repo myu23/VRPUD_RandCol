@@ -2,7 +2,7 @@ package RandCol;
 
 import java.util.*;
 
-public class Seperator {
+public class Seperator2 {
     private Graph gStar;
     private Graph graph;
 
@@ -15,7 +15,7 @@ public class Seperator {
     private int Q;
 
 
-    public Seperator(int n, List<Route> routes, int capacity){
+    public Seperator2(int n, List<Route> routes, int capacity){
         this.n = n;
         this.Q = capacity;
         this.gStar = new Graph(n, routes, true);
@@ -66,26 +66,34 @@ public class Seperator {
         }
         double tot = 0;
         double tot2 = 0;
-        for(int i = 1; i < n; i++){
-            if(set[i]){
-                tot += gStar.x[0][i];
-            }else {
-                tot2 += gStar.x[0][i];
+        for(int i = 0; i < n; i++){
+//            if(set[i]){
+//                tot += gStar.x[0][i];
+//            }else {
+//                tot2 += gStar.x[0][i];
+//            }
+            for(int j = 0; j < n; j++){
+                if(set[i] ^ set[j]){
+                    if(set[j]) tot += gStar.x[i][j];
+                    else tot2 += gStar.x[i][j];
+                }
             }
         }
         int r = (int)Math.ceil(1.0*(comp.size())/Q);
-        if(tot < 2*r-1e-6){
-            System.out.println(comp+":"+tot);
-            Cut cut = new Cut(set, 2*r);
+        if(tot+1e-6 < r){
+            System.out.println(comp+":"+tot+"-"+r);
+            Cut cut = new Cut(set, r);
             cutPool.add(cut);
         }
-        r = (int) Math.ceil(1.0*(n-1-comp.size())/Q);
-        if(tot2 < 2*r-1e-6){
-            boolean[] cset = new boolean[n];
-            for(int i = 1; i < n; i++) cset[i] = !set[i];
-            Cut cut = new Cut(cset, 2*r);
-            cutPool.add(cut);
-        }
+//        r = (int)Math.ceil(1.0*(n-1-comp.size())/Q);
+//        if(tot2 < r-1e-6){
+//            boolean[] cset = new boolean[n];
+//
+//            for(int i = 1; i < n; i++) cset[i] = !set[i];
+//            System.out.println(comp+":"+tot2+"-"+r);
+//            Cut cut = new Cut(cset, r);
+//            cutPool.add(cut);
+//        }
     }
 
 
@@ -101,15 +109,18 @@ public class Seperator {
             graph[j][n] = Math.max(0, 1.0/Q - gStar.x[0][j]);
         }
         boolean[] set = minCut(graph, 0, n+1);
+        for(int i = 0; i < n; i++)
+            set[i] = !set[i];
         int count = 0;
         for(boolean b : set) if(b) count++;
         double tot = 0;
         double tot2 = 0;
-        for(int i = 1; i < n; i++){
-            if(set[i]){
-                tot += gStar.x[0][i];
-            }else {
-                tot2 += gStar.x[0][i];
+        for(int i = 0; i < n; i++){
+            for(int j = 0; j < n; j++){
+                if(set[i] ^ set[j]){
+                    if(set[j]) tot += gStar.x[i][j];
+                    else tot2 += gStar.x[i][j];
+                }
             }
         }
         int r = (int)Math.ceil(1.0*(count)/Q);
@@ -117,13 +128,8 @@ public class Seperator {
             Cut cut = new Cut(set, 2*r);
             cutPool.add(cut);
         }
-        r = (int) Math.ceil(1.0*(n-1-count)/Q);
-        if(tot2 < 2*r-1e-6){
-            boolean[] cset = new boolean[n];
-            for(int i = 1; i < n; i++) cset[i] = !set[i];
-            Cut cut = new Cut(cset, 2*r);
-            cutPool.add(cut);
-        }
+
+
 
     }
     public List<Cut> generate(){
@@ -143,7 +149,7 @@ public class Seperator {
         r2.sol = 0.1;
         r3.sol = 0.1;
         List<Route> rlst = new ArrayList<>(Arrays.asList(r1,r2,r3));
-        Seperator test = new Seperator(7, rlst, 3);
+        Seperator2 test = new Seperator2(7, rlst, 3);
         test.roundedCap();
         System.out.println(test.cutPool.size());
 
@@ -187,15 +193,16 @@ public class Seperator {
                     int from = i==0?0:r.route.get(i-1);
                     int to = i==r.route.size()?0:r.route.get(i);
                     graph[from][to] = true;
-                    graph[to][from] = true;
                     this.x[from][to] += r.sol;
-                    this.x[to][from] += r.sol;
                 }
             }
 //            for(int i = 0; i < n; i++)
 //                System.out.println(Arrays.toString(x[i]));
         }
     }
+
+
+
     public class UnionFind {
         private int count; // number of disjoint sets
         private int[] parent;

@@ -8,14 +8,7 @@ import java.util.Arrays;
 
 public class test {
     public static void main(String[] args){
-//        solomon1();
-//        solomon2();
-//        solomon3();
-//        solomon1P();
-        //solomon2P();
-        //solomon3P();
-        xinstanceP34();
-        xinstanceP();
+
         xinstance();
     }
 
@@ -318,7 +311,7 @@ public class test {
 
                 String[] temp = f.toString().split("\\\\");
                 String filename = temp[temp.length-1];
-                for(int l = 5; l < 6; l++){
+                for(int l = 3; l < 4; l++){
                         Data data = new Data(folder, filename, l);
                         CG_RC cg = new CG_RC(data);
                         cg.solve();
@@ -337,6 +330,7 @@ public class test {
                         output.add("t_ub2,"+Double.toString(cg.ubTime/1000.0));
                         output.add("nEnumCols,"+Integer.toString(cg.count));
                         Functions.writeDataCSV("Results/RandCol/", data.fileName+"-N"+data.nNode+"-K"+data.capacity, output);
+                        break;
                 }
             }
         }catch(Exception e){
