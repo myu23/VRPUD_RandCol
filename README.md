@@ -1,11 +1,11 @@
 # Improving Column-Generation for Vehicle Routing Problems via Random Coloring and Parallelization
-This repository contains the source code used in the computational experiments of paper: **Improving Column-Generation for Vehicle Routing Problems via Random Coloring and Parallelization** (most updated version is available at Optimization Online [http://www.optimization-online.org/DB_HTML/2021/03/8292.html]). 
+This repository contains the source code used in the computational experiments of the paper: **Improving Column-Generation for Vehicle Routing Problems via Random Coloring and Parallelization** (most updated version is available at Optimization Online [http://www.optimization-online.org/DB_HTML/2021/03/8292.html]). 
 
-In our paper, we solve Vehicle Routing Problem with Unit Demand using column generation approach. We promote a random coloring algorithm that solves the elmentary shortest path problem with resource constraints (ESPPRC), which serves as the subproblem of column generation-based approach.
+In our paper, we solve Vehicle Routing Problem with Unit Demand using column generation approach. We promote a random coloring algorithm that solves the elmentary shortest path problem with resource constraints (ESPPRC), which serves as the subproblem of column generation-based approach for Vehicle Routing Problem.
 
 ## Prerequisites
 
-Before you continue, ensure you have met the following requirements:
+Before you use the code, ensure you have met the following requirements:
 * You have access of Gurobi. It is used as the optimization solver for various linear programming and integer programming models in the code.
 * You have a basic understanding of column generation approach.
 
