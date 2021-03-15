@@ -1,5 +1,19 @@
 package RandCol;
-
+/**
+ * This class contains the solver for the elementary shortest path problem with resource constraints which serve as
+ * the subproblem of vehicle routing problem using column generation.
+ * The solver is based on the random coloring algorithm presented in
+ * "Improving Column-Generation for Vehicle Routing Problems via Random Coloring and Parallelization"
+ * http://www.optimization-online.org/DB_HTML/2021/03/8292.html
+ *
+ * This solver is a specialized version that find routes with negative costs. The algorithm will stop the search and
+ * return solutions when the solution pool reach a preset limit.
+ *
+ * This code is for academic use only
+ *
+ * @author Miao Yu
+ *
+ */
 
 import java.util.*;
 

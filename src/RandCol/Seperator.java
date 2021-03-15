@@ -2,7 +2,14 @@ package RandCol;
 
 import java.util.*;
 
-public class Seperator2 {
+/**
+ * This class contains the seperation procedures to find rounded capacity cuts for capacitated vehicle routing problems.
+ * The method is adopt from
+ * Lysgaard, J., Letchford, A., Eglese, R.: A new branch-and-cut algorithm for the capacitated vehicle routing problem. Math. Prog. 100 (2), 423–445 (2004)
+ *
+ * @author Miao Yu
+ */
+public class Seperator {
     private Graph gStar;
     private Graph graph;
 
@@ -15,7 +22,7 @@ public class Seperator2 {
     private int Q;
 
 
-    public Seperator2(int n, List<Route> routes, int capacity){
+    public Seperator(int n, List<Route> routes, int capacity){
         this.n = n;
         this.Q = capacity;
         this.gStar = new Graph(n, routes, true);
@@ -50,10 +57,8 @@ public class Seperator2 {
         }
         for(int i = 1; i < n; i++){
             if(components.get(i).size() <= 1) continue;
-//            System.out.println(i+":"+components.get(i));
             checkRCI1(components.get(i));
         }
-        //checkRCI2(gStar);
 
 
 
@@ -65,17 +70,11 @@ public class Seperator2 {
             set[i] = true;
         }
         double tot = 0;
-        double tot2 = 0;
         for(int i = 0; i < n; i++){
-//            if(set[i]){
-//                tot += gStar.x[0][i];
-//            }else {
-//                tot2 += gStar.x[0][i];
-//            }
+
             for(int j = 0; j < n; j++){
                 if(set[i] ^ set[j]){
                     if(set[j]) tot += gStar.x[i][j];
-                    else tot2 += gStar.x[i][j];
                 }
             }
         }
@@ -85,15 +84,7 @@ public class Seperator2 {
             Cut cut = new Cut(set, r);
             cutPool.add(cut);
         }
-//        r = (int)Math.ceil(1.0*(n-1-comp.size())/Q);
-//        if(tot2 < r-1e-6){
-//            boolean[] cset = new boolean[n];
-//
-//            for(int i = 1; i < n; i++) cset[i] = !set[i];
-//            System.out.println(comp+":"+tot2+"-"+r);
-//            Cut cut = new Cut(cset, r);
-//            cutPool.add(cut);
-//        }
+
     }
 
 
@@ -114,12 +105,11 @@ public class Seperator2 {
         int count = 0;
         for(boolean b : set) if(b) count++;
         double tot = 0;
-        double tot2 = 0;
+
         for(int i = 0; i < n; i++){
             for(int j = 0; j < n; j++){
                 if(set[i] ^ set[j]){
                     if(set[j]) tot += gStar.x[i][j];
-                    else tot2 += gStar.x[i][j];
                 }
             }
         }
@@ -149,7 +139,7 @@ public class Seperator2 {
         r2.sol = 0.1;
         r3.sol = 0.1;
         List<Route> rlst = new ArrayList<>(Arrays.asList(r1,r2,r3));
-        Seperator2 test = new Seperator2(7, rlst, 3);
+        Seperator test = new Seperator(7, rlst, 3);
         test.roundedCap();
         System.out.println(test.cutPool.size());
 

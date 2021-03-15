@@ -5,13 +5,26 @@
  *
  */
 package RandCol;
+/**
+ * This class contains the solver for the Vehicle Routing Problem with Unit Demand.
+ * The solver is based on the column generation approach detailed in
+ * "Improving Column-Generation for Vehicle Routing Problems via Random Coloring and Parallelization"
+ * http://www.optimization-online.org/DB_HTML/2021/03/8292.html
+ *
+ * This solver solve the subproblem of column generation using random coloring algorithm detailed in the paper.
+ *
+ * This code is for academic use only
+ *
+ * @author Miao Yu
+ *
+ */
 
 import gurobi.*;
-import gurobi.GRB.DoubleAttr;
 import pulse.DataHandler;
 import pulse.GraphManager;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 public class CG_RC {
@@ -173,7 +186,7 @@ public class CG_RC {
                 // print master status
                 int optimstatus = master.get(GRB.IntAttr.Status);
                 if (optimstatus == GRB.Status.OPTIMAL) {
-                    objval = master.get(DoubleAttr.ObjVal);
+                    objval = master.get(GRB.DoubleAttr.ObjVal);
                     lowerbound = objval;
                     //System.out.println("Current Optimal objective: " + objval);
                 } else{
@@ -185,7 +198,7 @@ public class CG_RC {
                 // primal solution
                 double[] xroute = new double[lambda.getSize()];
                 for(i = 0; i < lambda.getSize(); i++){
-                    xroute[i] = lambda.getElement(i).get(DoubleAttr.X);
+                    xroute[i] = lambda.getElement(i).get(GRB.DoubleAttr.X);
                 }
 
 
@@ -195,12 +208,12 @@ public class CG_RC {
                 double[] alpha = new double[nNode];
                 //double[] gamma = new double[K];
                 for(i = 1; i < nNode; i++){
-                    alpha[i] = cons_visit[i].get(DoubleAttr.Pi);
+                    alpha[i] = cons_visit[i].get(GRB.DoubleAttr.Pi);
                 }
                 // dual solution for cuts
                 double[] beta = new double[cut_enforce.size()];
                 for(i = 0; i < cut_enforce.size(); i++){
-                    beta[i] = cut_enforce.get(i).get(DoubleAttr.Pi);
+                    beta[i] = cut_enforce.get(i).get(GRB.DoubleAttr.Pi);
                 }
 
 //                System.out.println("print dual solutions");
@@ -253,7 +266,7 @@ public class CG_RC {
                         routes.get(i).sol = xroute[i];
                     }
                 }
-                Seperator2 spt = new Seperator2(nNode, sol_routes, data.capacity);
+                Seperator spt = new Seperator(nNode, sol_routes, data.capacity);
                 spt.generate();
                 if(spt.getCutPool().size() != 0) oncemore = true;
                 for(Cut c : spt.getCutPool()){
@@ -484,13 +497,13 @@ public class CG_RC {
             double[] alpha = new double[nNode];
             //double[] gamma = new double[K];
             for(i = 1; i < nNode; i++){
-                alpha[i] = cons_visit[i].get(DoubleAttr.Pi);
+                alpha[i] = cons_visit[i].get(GRB.DoubleAttr.Pi);
             }
 
             // dual solution for cuts
             double[] beta = new double[cut_enforce.size()];
             for(i = 0; i < cut_enforce.size(); i++){
-                beta[i] = cut_enforce.get(i).get(DoubleAttr.Pi);
+                beta[i] = cut_enforce.get(i).get(GRB.DoubleAttr.Pi);
             }
 
 //            System.out.println("print dual solutions");
@@ -633,13 +646,13 @@ public class CG_RC {
 
             int optimstatus = master.get(GRB.IntAttr.Status);
             if (optimstatus == GRB.Status.OPTIMAL) {
-                objval = master.get(DoubleAttr.ObjVal);
+                objval = master.get(GRB.DoubleAttr.ObjVal);
                 System.out.println("Current Optimal objective: " + objval);
             }
 
 
 
-            upperbound = master.get(DoubleAttr.ObjVal);
+            upperbound = master.get(GRB.DoubleAttr.ObjVal);
 
 
             // Dispose of model and environment

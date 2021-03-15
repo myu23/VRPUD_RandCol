@@ -1,5 +1,19 @@
 package RandCol;
-
+/**
+ * This class contains the solver for the Vehicle Routing Problem with Unit Demand.
+ * The solver is based on the column generation approach detailed in
+ * "Improving Column-Generation for Vehicle Routing Problems via Random Coloring and Parallelization"
+ * http://www.optimization-online.org/DB_HTML/2021/03/8292.html
+ *
+ * This solver solve the subproblem of column generation using pulse algorithm presented by
+ * "An exact algorithm for the elementary shortest path problem with resource constraints"
+ * L Lozano, D Duque, AL Medaglia - Transportation Science, 2016
+ *
+ * This code is for academic use only
+ *
+ * @author Miao Yu
+ *
+ */
 
 
 import gurobi.*;
@@ -248,7 +262,7 @@ public class CG_Pulse {
                         routes.get(i).sol = xroute[i];
                     }
                 }
-                Seperator2 spt = new Seperator2(nNode, sol_routes, data.capacity);
+                Seperator spt = new Seperator(nNode, sol_routes, data.capacity);
                 spt.generate();
                 if(spt.getCutPool().size() != 0) oncemore = true;
                 for(Cut c : spt.getCutPool()){

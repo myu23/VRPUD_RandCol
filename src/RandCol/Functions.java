@@ -1,6 +1,9 @@
 package RandCol;
-
-import miaoyu.helper.Route;
+/**
+ * This class contains some helper functions
+ *
+ * @author Miao Yu
+ */
 
 import java.io.*;
 import java.util.ArrayList;

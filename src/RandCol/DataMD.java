@@ -1,5 +1,5 @@
 /**
- * This class contains the parameter used for CVRP with multiple depot
+ * This class contains the parameter used for VRPUD with multiple depot
  * The code is for academic use only
  * @author Miao Yu
  * @since Feb 5, 2018

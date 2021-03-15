@@ -1,26 +1,34 @@
 package RandCol;
-
+/**
+ * This class contains drivers for the numerical tests of the paper
+ * "Improving Column-Generation for Vehicle Routing Problems via Random Coloring and Parallelization"
+ * http://www.optimization-online.org/DB_HTML/2021/03/8292.html
+ *
+ * The functions are provided as examples, you may need to change the file seperators based on your computational enviroments
+ *
+ * Academic use only
+ * @authro Miao Yu
+ */
 
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class test {
+public class NumericalTests {
     public static void main(String[] args){
-
-        xinstance();
+        xP();
     }
 
     public static void xP(){
         try{
-            String folder = "Instances\\X_unit\\";
+            String folder = "Instances/X_unit/";
             File file = new File(folder);
             System.out.println(Arrays.toString(file.listFiles()));
             int counter = 0;
             for(File f : file.listFiles()) {
 
-                String[] temp = f.toString().split("\\\\");
+                String[] temp = f.toString().split("/");
                 String filename = temp[temp.length-1];
                 for(int l = 3; l < 4; l++){
                     Data data = new Data(folder, filename, l);
